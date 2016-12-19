@@ -1,3 +1,4 @@
+import operator
 # -----
 # Limitations
 # -----
@@ -46,3 +47,10 @@ def nu(t,timescale):
 #
 #
 # 
+# -----------------
+# Product of a list (http://stackoverflow.com/questions/595374/whats-the-python-function-like-sum-but-for-multiplication-product)
+# -----------------
+#
+def product(factors):
+	return reduce(operator.mul, factors, 1)
+#
