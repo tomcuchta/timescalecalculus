@@ -1,4 +1,5 @@
 import operator
+from fractions import Fraction
 # -----
 # Limitations
 # -----
