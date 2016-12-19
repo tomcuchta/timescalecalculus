@@ -23,14 +23,20 @@ from fractions import Fraction
 # proper time scale behavior says that inf(empty)=max(T) -- does that happen?
 #
 def sigma(t,timescale):
-	return min([x for x in timescale if x>t]);
+	if t==max(timescale):
+		return t;
+	else:
+		return min([x for x in timescale if x>t]);
 #
 #
 # Backward jump operator
 # ----------------------
 #
 def rho(t,timescale):
-	return max([x for x in timescale if x<t]);
+	if t==min(timescale):
+		return t;
+	else:
+		return max([x for x in timescale if x<t]);
 #
 #
 # Forward graininess mu
