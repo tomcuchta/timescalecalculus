@@ -4,9 +4,6 @@
 #
 #
 class timescale:
-    def out(self):
-        print("it works")
-
     def __init__(self,ts,name):
         self.ts = ts
         self.name = name
@@ -84,7 +81,7 @@ class timescale:
 #
 #
 def integers(a,b):
-    return timescale(list(range(a,b)),'integers from a to b')
+    return timescale(list(range(a,b)),'integers from '+str(a)+' to '+str(b))
 
 #
 #
@@ -92,6 +89,6 @@ def integers(a,b):
 # only does q^(X) where X={0,1,2,3,...} at the moment
 #
 def quantum(q,m,n):
-    return timescale([q**k for k in range(m,n)], 'quantum numbers q^'+str(m)+'to q^'+str(n))
+    return timescale([q**k for k in range(m,n)], 'quantum numbers '+str(q)+'^'+str(m)+' to '+str(q)+'^'+str(n))
 
 
