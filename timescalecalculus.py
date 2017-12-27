@@ -1,5 +1,4 @@
 import operator
-from fractions import Fraction
 
 #
 # Product function from
