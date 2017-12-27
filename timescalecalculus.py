@@ -1,5 +1,5 @@
 import operator
-import Fraction
+from fractions import Fraction
 
 #
 # Product function from
@@ -15,7 +15,7 @@ def product(factors):
 #
 #
 class timescale:
-    def __init__(self,ts,name):
+    def __init__(self,ts,name='none'):
         self.ts = ts
         self.name = name
     #
