@@ -1,3 +1,14 @@
+import operator
+import Fraction
+
+#
+# Product function from
+# https://stackoverflow.com/questions/595374/whats-the-python-function-like-sum-but-for-multiplication-product
+#
+def product(factors):
+        return reduce(operator.mul, factors, 1)
+
+
 #
 #
 # Time scale class
