@@ -85,6 +85,14 @@ class timescale:
     #
     def dexpf(self,f,t,s):
         return product([1+self.mu(x)*f(x) for x in self.ts if x >= s and x<t])
+
+    #
+    #
+    # forward circle minus
+    #
+    #
+    def mucircleminus(self,f,t):
+	return -f(t)/(1+f(t)*self.mu(t))
 #
 #
 # create the time scale of integers {x : a <= x <= b}
