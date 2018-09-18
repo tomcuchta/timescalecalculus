@@ -1,5 +1,5 @@
 import operator
-
+#
 #
 # Product function from
 # https://stackoverflow.com/questions/595374/whats-the-python-function-like-sum-but-for-multiplication-product
