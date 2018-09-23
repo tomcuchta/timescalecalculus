@@ -1,4 +1,6 @@
 import operator
+from functools import reduce # Added this because in python 3.* they changed the location of the reduce() method to the functools module
+
 #
 #
 # Product function from
@@ -92,7 +94,7 @@ class timescale:
     #
     #
     def mucircleminus(self,f,t):
-	return -f(t)/(1+f(t)*self.mu(t))
+        return -f(t)/(1+f(t)*self.mu(t))
 #
 #
 # create the time scale of integers {x : a <= x <= b}
