@@ -1,4 +1,6 @@
 import operator
+from functools import reduce # Added this because in python 3.* they changed the location of the reduce() method to the functools module
+
 #
 #
 # Product function from
@@ -18,7 +20,7 @@ class timescale:
         self.ts = ts
         self.name = name
     #
-    #   
+    #
     # forward jump
     #
     #
@@ -83,8 +85,8 @@ class timescale:
     # delta exponential
     #
     #
-    def dexpf(self,f,t,s):
-        return product([1+self.mu(x)*f(x) for x in self.ts if x >= s and x<t])
+    def dexp_p(self,p,t,s):
+        return product([1+self.mu(x)*p(x) for x in self.ts if x >= s and x<t])
 
     #
     #
@@ -92,7 +94,32 @@ class timescale:
     #
     #
     def mucircleminus(self,f,t):
-	return -f(t)/(1+f(t)*self.mu(t))
+        return -f(t)/(1+f(t)*self.mu(t))
+
+    #
+    #
+    # The forward-derivative cosine trigonometric function.
+    #
+    #
+    def dcos_p(self, p, t, s):
+        dexp_p1 = self.dexp_p(lambda x: p(x) * 1j, t, s)
+
+        dexp_p2 = self.dexp_p(lambda x: p(x) * -1j, t, s)
+
+        return ((dexp_p1 + dexp_p2) / 2)
+
+    #
+    #
+    # The forward-derivative sine trigonometric function.
+    #
+    #
+    def dsin_p(self, p, t, s):
+        dexp_p1 = self.dexp_p(lambda x: p(x) * 1j, t, s)
+
+        dexp_p2 = self.dexp_p(lambda x: p(x) * -1j, t, s)
+
+        return ((dexp_p1 - dexp_p2) / 2j)
+
 #
 #
 # create the time scale of integers {x : a <= x <= b}
