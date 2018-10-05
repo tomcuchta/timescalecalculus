@@ -86,13 +86,6 @@ class timescale:
     #
     #
     def dexp_p(self,p,t,s):
-#        for x in self.ts:
-#            if x >= s and x < t:
-#                print("x:", x)
-#                print("p(x):", p(x))
-#
-#        print()
-
         return product([1+self.mu(x)*p(x) for x in self.ts if x >= s and x<t])
 
     #
