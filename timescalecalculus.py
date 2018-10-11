@@ -120,13 +120,24 @@ class timescale:
 
         return ((dexp_p1 - dexp_p2) / 2j)
 
+    #
+    #
+    # The Laplace transform function.
+    #
+    #
+    def laplace_transform(self, f, z, s):
+        def g(t):
+            return f(t) * self.dexp_p(lambda t: self.mucircleminus(z, t), self.sigma(t), s)
+
+        return self.dintegral(g, max(self.ts), s)
+
 #
 #
 # create the time scale of integers {x : a <= x <= b}
 #
 #
 def integers(a,b):
-    return timescale(list(range(a,b)),'integers from '+str(a)+' to '+str(b))
+    return timescale(list(range(a,b+1)),'integers from '+str(a)+' to '+str(b))
 
 #
 #
