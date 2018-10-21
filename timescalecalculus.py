@@ -1,5 +1,7 @@
 import operator
 from functools import reduce # Added this because in python 3.* they changed the location of the reduce() method to the functools module
+from scipy import integrate
+from scipy.misc import derivative
 
 #
 #
@@ -19,16 +21,84 @@ class timescale:
     def __init__(self,ts,name='none'):
         self.ts = ts
         self.name = name
+
+        #
+        # The following code validates the user-specified timescale to ensure that there are no overlaps such as:
+        #   - a point given more than once
+        #   - a point that is included in an interval
+        #   - a point that is the starting value or ending value of an interval
+        #   - an interval given more than once
+        #   - overlapping intervals
+        #
+        # If a timescale is detected as invalid an Exception will be generated with a corresponding message that describes the cause of the invalidity.
+        #
+        for listItem in ts:
+            if isinstance(listItem, list):
+                if len(listItem) > 2:
+                    raise Exception("Invalid timescale declaration: you cannot have an interval with more than one starting and one ending value.")
+
+                if len(listItem) < 2:
+                    raise Exception("Invalid timescale declaration: an interval must have a starting value and an ending value.")
+
+                if listItem[0] > listItem[1]:
+                    raise Exception("Invalid timescale declaration: you cannot have an interval in which the ending value is smaller than the starting value.")
+
+                if listItem[0] == listItem[1]:
+                    raise Exception("Invalid timescale declaration: you cannot have an interval in which the starting value and ending value are equal (such an interval should be declared as a point).")
+
+            for listItemToCompare in ts:
+                if listItem == listItemToCompare and listItem is not listItemToCompare:
+                    raise Exception("Invalid timescale declaration: you cannot include the same point or interval more than once.")
+
+                if listItem is not listItemToCompare:
+                    if isinstance(listItem, list) and isinstance(listItemToCompare, list):
+                        if (listItem[0] >= listItemToCompare[0] and listItem[0] <= listItemToCompare[1]) or (listItem[1] >= listItemToCompare[0] and listItem[1] <= listItemToCompare[1]):
+                            raise Exception("Invalid timescale declaration: you cannot have overlapping intervals.")
+
+                    if isinstance(listItem, list) and not isinstance(listItemToCompare, list):
+                        if listItemToCompare >= listItem[0] and listItemToCompare <= listItem[1]:
+                            raise Exception("Invalid timescale declaration: you cannot declare a point that is included in an interval (you cannot declare a value more than once).")
+
+                    if not isinstance(listItem, list) and isinstance(listItemToCompare, list):
+                        if listItem >= listItemToCompare[0] and listItem <= listItemToCompare[1]:
+                            raise Exception("Invalid timescale declaration: you cannot declare a point that is included in an interval (you cannot declare a value more than once).")
+
+        print("Timescale successfully constructed:")
+        print("Timescale:", self.ts)
+        print("Timescale name:", self.name)
+
     #
     #
     # forward jump
     #
     #
     def sigma(self,t):
-        if t==max(self.ts):
+        tIndex = 0
+        tNext = None
+        iterations = 0
+
+        for x in self.ts:
+            if (not isinstance(x, list) and t == x) or (isinstance(x, list) and t >= x[0] and t <= x[1]):
+                tIndex = iterations
+                break
+
+            iterations = iterations + 1
+
+        if (tIndex + 1) == len(self.ts):
             return t
+
+        elif isinstance(self.ts[tIndex], list):
+            return t
+
         else:
-            return min([x for x in self.ts if x>t])
+            tNext = self.ts[tIndex + 1]
+
+            if isinstance(tNext, list):
+                return tNext[0]
+
+            else:
+                return tNext
+
     #
     #
     # backwards jump
@@ -46,6 +116,10 @@ class timescale:
     #
     #
     def mu(self,t):
+        for x in self.ts:
+            if isinstance(x, list) and t >= x[0] and t <= x[1]:
+                return 0
+
         return self.sigma(t)-t
 
     #
@@ -62,7 +136,11 @@ class timescale:
     #
     #
     def dderivative(self,f,t):
-        return (f(self.sigma(t))-f(t))/self.mu(t)
+        if self.sigma(t) == t:
+            return derivative(f, t, dx=(1.0/2**16))
+
+        else:
+            return (f(self.sigma(t))-f(t))/self.mu(t)
 
     #
     #
@@ -78,7 +156,54 @@ class timescale:
     #
     #
     def dintegral(self,f,t,s):
-        return sum([self.mu(x)*f(x) for x in self.ts if x>=s and x<t])
+        # The following code checks that t and s are elements of the timescale
+
+        tIsAnElement = False
+        sIsAnElement = False
+
+        for x in self.ts:
+            if not isinstance(x, list) and x == t:
+                tIsAnElement = True
+
+            if not isinstance(x, list) and x == s:
+                sIsAnElement = True
+
+            if isinstance(x, list) and  x[1] == t:
+                tIsAnElement = True
+
+            if isinstance(x, list) and  x[0] == s:
+                sIsAnElement = True
+
+            if tIsAnElement and sIsAnElement:
+                break
+
+        if not tIsAnElement and not sIsAnElement:
+            raise Exception("The bounds of the dintegral function, t and s, are not elements of timescale.")
+
+        elif not tIsAnElement:
+            raise Exception("The upper bound of dintegral function, t, is not an element of timescale.")
+
+        elif not sIsAnElement:
+            raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
+
+
+        # Validation code ends
+
+        points = []
+        intervals = []
+
+        for x in self.ts:
+            if not isinstance(x, list) and x >= s and x < t:
+                points.append(x)
+
+            elif isinstance(x, list) and  x[0] >= s and x[1] <= t:
+                intervals.append(x)
+
+        sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
+
+        sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+
+        return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
 
     #
     #
