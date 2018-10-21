@@ -1,5 +1,7 @@
 import operator
 from functools import reduce # Added this because in python 3.* they changed the location of the reduce() method to the functools module
+from scipy import integrate
+from scipy.misc import derivative
 
 #
 #
@@ -71,10 +73,32 @@ class timescale:
     #
     #
     def sigma(self,t):
-        if t==max(self.ts):
+        tIndex = 0
+        tNext = None
+        iterations = 0
+
+        for x in self.ts:
+            if (not isinstance(x, list) and t == x) or (isinstance(x, list) and t >= x[0] and t <= x[1]):
+                tIndex = iterations
+                break
+
+            iterations = iterations + 1
+
+        if (tIndex + 1) == len(self.ts):
             return t
+
+        elif isinstance(self.ts[tIndex], list):
+            return t
+
         else:
-            return min([x for x in self.ts if x>t])
+            tNext = self.ts[tIndex + 1]
+
+            if isinstance(tNext, list):
+                return tNext[0]
+
+            else:
+                return tNext
+
     #
     #
     # backwards jump
@@ -92,6 +116,10 @@ class timescale:
     #
     #
     def mu(self,t):
+        for x in self.ts:
+            if isinstance(x, list) and t >= x[0] and t <= x[1]:
+                return 0
+
         return self.sigma(t)-t
 
     #
@@ -108,7 +136,11 @@ class timescale:
     #
     #
     def dderivative(self,f,t):
-        return (f(self.sigma(t))-f(t))/self.mu(t)
+        if self.sigma(t) == t:
+            return derivative(f, t, dx=(1.0/2**16))
+
+        else:
+            return (f(self.sigma(t))-f(t))/self.mu(t)
 
     #
     #
@@ -124,7 +156,54 @@ class timescale:
     #
     #
     def dintegral(self,f,t,s):
-        return sum([self.mu(x)*f(x) for x in self.ts if x>=s and x<t])
+        # The following code checks that t and s are elements of the timescale
+
+        tIsAnElement = False
+        sIsAnElement = False
+
+        for x in self.ts:
+            if not isinstance(x, list) and x == t:
+                tIsAnElement = True
+
+            if not isinstance(x, list) and x == s:
+                sIsAnElement = True
+
+            if isinstance(x, list) and  x[1] == t:
+                tIsAnElement = True
+
+            if isinstance(x, list) and  x[0] == s:
+                sIsAnElement = True
+
+            if tIsAnElement and sIsAnElement:
+                break
+
+        if not tIsAnElement and not sIsAnElement:
+            raise Exception("The bounds of the dintegral function, t and s, are not elements of timescale.")
+
+        elif not tIsAnElement:
+            raise Exception("The upper bound of dintegral function, t, is not an element of timescale.")
+
+        elif not sIsAnElement:
+            raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
+
+
+        # Validation code ends
+
+        points = []
+        intervals = []
+
+        for x in self.ts:
+            if not isinstance(x, list) and x >= s and x < t:
+                points.append(x)
+
+            elif isinstance(x, list) and  x[0] >= s and x[1] <= t:
+                intervals.append(x)
+
+        sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
+
+        sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+
+        return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
 
     #
     #
