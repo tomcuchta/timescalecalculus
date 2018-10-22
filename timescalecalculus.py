@@ -168,17 +168,17 @@ class timescale:
             if not isinstance(x, list) and x == s:
                 sIsAnElement = True
 
-            if isinstance(x, list) and  x[1] == t:
+            if isinstance(x, list) and  (t >= x[0] and t <= x[1]):
                 tIsAnElement = True
 
-            if isinstance(x, list) and  x[0] == s:
+            if isinstance(x, list) and  (s >= x[0] and s <= x[1]):
                 sIsAnElement = True
 
             if tIsAnElement and sIsAnElement:
                 break
 
         if not tIsAnElement and not sIsAnElement:
-            raise Exception("The bounds of the dintegral function, t and s, are not elements of timescale.")
+            raise Exception("The bounds of the dintegral function, t and s, are not elements of the timescale.")
 
         elif not tIsAnElement:
             raise Exception("The upper bound of dintegral function, t, is not an element of timescale.")
@@ -197,11 +197,47 @@ class timescale:
                 points.append(x)
 
             elif isinstance(x, list) and  x[0] >= s and x[1] <= t:
+                points.append(x[1])
                 intervals.append(x)
+
+            elif isinstance(x, list) and  (s >= x[0] and s <= x[1]) and (t > x[1]):
+                points.append(x[1])
+                intervals.append([s, x[1]])
+
+            elif isinstance(x, list) and  (s >= x[0] and s <= x[1]) and (t == x[1]):
+                points.append(x[1])
+                intervals.append([s, x[1]])
+
+            elif isinstance(x, list) and  (s >= x[0] and s < x[1]) and (t < x[1]):
+                intervals.append([s, t])
+
+            elif isinstance(x, list) and  (t >= x[0] and t < x[1]) and (s < x[0]):
+                intervals.append([x[0], t])
+
+        # Testing code
+        print("---------------------------")
+        print()
+        print("timescale:", self.ts)
+        print()
+        print("integral from s =", s, "to t =", t)
+        print()
+        print("timescale items to integrate:")
+        print("points:", points)
+        print("intervals:", intervals)
+        print()
+        print("integrals of points:")
+        print([self.mu(x)*f(x) for x in points])
+        print()
+        print("integrals of intervals:")
+        print([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+        print()
+        print("result:")
 
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
         sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+
+        print(sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])) # Testing code
 
         return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
 
