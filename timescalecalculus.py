@@ -201,25 +201,27 @@ class timescale:
         intervals = []
 
         for x in self.ts:
-            if not isinstance(x, list) and x >= s and x < t:
+            if not isinstance(x, list) and s <= x and t > x:
                 points.append(x)
 
-            elif isinstance(x, list) and  x[0] >= s and x[1] <= t:
+            elif isinstance(x, list) and s <= x[0] and t > x[1]:
                 points.append(x[1])
                 intervals.append(x)
 
-            elif isinstance(x, list) and  (s >= x[0] and s <= x[1]) and (t > x[1]):
+            elif isinstance(x, list) and s <= x[0] and t == x[1]:
+                intervals.append(x)
+
+            elif isinstance(x, list) and (s >= x[0] and s <= x[1]) and (t > x[1]):
                 points.append(x[1])
                 intervals.append([s, x[1]])
 
-            elif isinstance(x, list) and  (s >= x[0] and s <= x[1]) and (t == x[1]):
-                points.append(x[1])
+            elif isinstance(x, list) and (s >= x[0] and s <= x[1]) and (t == x[1]):
                 intervals.append([s, x[1]])
 
-            elif isinstance(x, list) and  (s >= x[0] and s < x[1]) and (t < x[1]):
+            elif isinstance(x, list) and (s >= x[0] and s < x[1]) and (t < x[1]):
                 intervals.append([s, t])
 
-            elif isinstance(x, list) and  (t >= x[0] and t < x[1]) and (s < x[0]):
+            elif isinstance(x, list) and (s < x[0]) and (t >= x[0] and t < x[1]):
                 intervals.append([x[0], t])
 
         # Testing code
