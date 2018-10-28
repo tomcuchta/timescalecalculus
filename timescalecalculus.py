@@ -88,7 +88,15 @@ class timescale:
             return t
 
         elif isinstance(self.ts[tIndex], list):
-            return t
+            if (t != self.ts[tIndex][1]):
+                return t
+
+            else:
+                if (isinstance(self.ts[tIndex + 1], list)):
+                    return self.ts[tIndex + 1][0]
+
+                else:
+                    return self.ts[tIndex + 1]
 
         else:
             tNext = self.ts[tIndex + 1]
@@ -117,7 +125,7 @@ class timescale:
     #
     def mu(self,t):
         for x in self.ts:
-            if isinstance(x, list) and t >= x[0] and t <= x[1]:
+            if isinstance(x, list) and t >= x[0] and t < x[1]:
                 return 0
 
         return self.sigma(t)-t
@@ -224,6 +232,15 @@ class timescale:
         print("timescale items to integrate:")
         print("points:", points)
         print("intervals:", intervals)
+        print()
+        print("f(x) for x in points:")
+        print([f(x) for x in points])
+        print()
+        print("mu(x) for x in points:")
+        print([self.mu(x) for x in points])
+        print()
+        print("sigma(x) for x in points:")
+        print([self.sigma(x) for x in points])
         print()
         print("integrals of points:")
         print([self.mu(x)*f(x) for x in points])
