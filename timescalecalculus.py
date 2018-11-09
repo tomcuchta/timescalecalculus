@@ -2,6 +2,8 @@ import operator
 from functools import reduce # Added this because in python 3.* they changed the location of the reduce() method to the functools module
 from scipy import integrate
 from scipy.misc import derivative
+import numpy as np
+import matplotlib.pyplot as plt
 
 #
 #
@@ -310,6 +312,36 @@ class timescale:
             return f(t) * self.dexp_p(lambda t: self.mucircleminus(z, t), self.sigma(t), s)
 
         return self.dintegral(g, max(self.ts), s)
+
+    #
+    #
+    # Basic plotting functionality.
+    #
+    #
+    def plot(self, f, stepSize):
+        xDiscretePoints = []
+        xIntervalPoints = []
+
+        yDiscretePoints = []
+        yIntervalPoints = []
+
+        for tsItem in self.ts:
+            if isinstance(tsItem, list):
+                for intervalValue in np.arange(tsItem[0], tsItem[1], stepSize):
+                    xIntervalPoints.append(intervalValue)
+                    yIntervalPoints.append(f(intervalValue))
+
+            else:
+                xDiscretePoints.append(tsItem)
+                yDiscretePoints.append(f(tsItem))
+
+        plt.xlabel("tsValues")
+        plt.ylabel("f(tsValues)")
+
+        plt.plot(xDiscretePoints, yDiscretePoints, 'b.', markersize=4)
+        plt.plot(xIntervalPoints, yIntervalPoints, 'r.', markersize=2)
+
+        plt.show()
 
 #
 #
