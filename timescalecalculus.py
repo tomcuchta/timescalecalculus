@@ -318,18 +318,24 @@ class timescale:
     # Basic plotting functionality.
     #
     #
-    def plot(self, f, stepSize):
+    def plot(self, f, stepSize, discretePointsStyle='b.', intervalPointsStyle='r-', argMarkerSize=4, argLineWidth=2):
         xDiscretePoints = []
-        xIntervalPoints = []
-
         yDiscretePoints = []
-        yIntervalPoints = []
+
+        intervals = []
 
         for tsItem in self.ts:
             if isinstance(tsItem, list):
+                xIntervalPoints = []
+                yIntervalPoints = []
+
                 for intervalValue in np.arange(tsItem[0], tsItem[1], stepSize):
                     xIntervalPoints.append(intervalValue)
                     yIntervalPoints.append(f(intervalValue))
+
+                xyIntervalPointsPair = [xIntervalPoints, yIntervalPoints]
+
+                intervals.append(xyIntervalPointsPair)
 
             else:
                 xDiscretePoints.append(tsItem)
@@ -338,8 +344,10 @@ class timescale:
         plt.xlabel("tsValues")
         plt.ylabel("f(tsValues)")
 
-        plt.plot(xDiscretePoints, yDiscretePoints, 'b.', markersize=4)
-        plt.plot(xIntervalPoints, yIntervalPoints, 'r.', markersize=2)
+        plt.plot(xDiscretePoints, yDiscretePoints, discretePointsStyle, markersize=argMarkerSize, linewidth=argLineWidth)
+
+        for xyIntervalPointsPair in intervals:
+            plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalPointsStyle, markersize=argMarkerSize, linewidth=argLineWidth)
 
         plt.show()
 
