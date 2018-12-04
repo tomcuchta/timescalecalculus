@@ -226,39 +226,9 @@ class timescale:
             elif isinstance(x, list) and (s < x[0]) and (t >= x[0] and t < x[1]):
                 intervals.append([x[0], t])
 
-        # Testing code
-        print("---------------------------")
-        print()
-        print("timescale:", self.ts)
-        print()
-        print("integral from s =", s, "to t =", t)
-        print()
-        print("timescale items to integrate:")
-        print("points:", points)
-        print("intervals:", intervals)
-        print()
-        print("f(x) for x in points:")
-        print([f(x) for x in points])
-        print()
-        print("mu(x) for x in points:")
-        print([self.mu(x) for x in points])
-        print()
-        print("sigma(x) for x in points:")
-        print([self.sigma(x) for x in points])
-        print()
-        print("integrals of points:")
-        print([self.mu(x)*f(x) for x in points])
-        print()
-        print("integrals of intervals:")
-        print([integrate.quad(f, x[0], x[1])[0] for x in intervals])
-        print()
-        print("result:")
-
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
         sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
-
-        print(sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])) # Testing code
 
         return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
 
@@ -315,21 +285,59 @@ class timescale:
 
     #
     #
-    # Basic plotting functionality.
+    # Plotting functionality.
+    #
+    # Required arguments:
+    #  f:
+    #  The function that will determine the y values of the graph - the x values are determined by the current timescale values.
+    #
+    #  stepSize:
+    #  The accuracy to which the intervals are drawn in the graph - the smaller the value, the higher the accuracy and overhead.
+    #
+    # Optional arguments:
+    #  discreteStyle and intervalStyle:
+    #  These arguments determine the color, marker, and line styles of the graph.
+    #  They accept string arguments of 3-part character combinations that represent a color, marker style, and line style.
+    #  For instance the string "-r." indicates that the current (x, y) points should be plotted with a connected line
+    #  (represented by the "-"), in a red color (represented by the "r"), and with a point marker (represented by the ".").
+    #  These character combinations can by in any order UNLESS the reordering changes the interpretation of the character combination.
+    #  For instance, the string "r-." does not produce the same result as the string "-r.".
+    #  This is because "-." indicates a "dash-dot line style" and is therefore no longer interpreted as a "point marker" with a "solid line style".
+    #  See the notes section of this resource for more information: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.plot.html
+    #
+    #  markerSize:
+    #  Determines the size of the any markers used in the graph.
+    #
+    #  lineWidth:
+    #  Determines the width of any lines in the graph.
     #
     #
-    def plot(self, f, stepSize):
-        xDiscretePoints = []
-        xIntervalPoints = []
+    def plot(self, f, stepSize, discreteStyle='b.', intervalStyle='r-', markerSize=4, lineWidth=2):
+        # Testing code start
+        print("discreteStyle =", discreteStyle)
+        print("intervalStyle =", intervalStyle)
+        print("markerSize =", markerSize)
+        print("lineWidth =", lineWidth)
+        print("\n-----------------------------------\n")
+        # Testing code end
 
+        xDiscretePoints = []
         yDiscretePoints = []
-        yIntervalPoints = []
+
+        intervals = []
 
         for tsItem in self.ts:
             if isinstance(tsItem, list):
+                xIntervalPoints = []
+                yIntervalPoints = []
+
                 for intervalValue in np.arange(tsItem[0], tsItem[1], stepSize):
                     xIntervalPoints.append(intervalValue)
                     yIntervalPoints.append(f(intervalValue))
+
+                xyIntervalPointsPair = [xIntervalPoints, yIntervalPoints]
+
+                intervals.append(xyIntervalPointsPair)
 
             else:
                 xDiscretePoints.append(tsItem)
@@ -338,8 +346,10 @@ class timescale:
         plt.xlabel("tsValues")
         plt.ylabel("f(tsValues)")
 
-        plt.plot(xDiscretePoints, yDiscretePoints, 'b.', markersize=4)
-        plt.plot(xIntervalPoints, yIntervalPoints, 'r.', markersize=2)
+        plt.plot(xDiscretePoints, yDiscretePoints, discreteStyle, markersize=markerSize, linewidth=lineWidth)
+
+        for xyIntervalPointsPair in intervals:
+            plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalStyle, markersize=markerSize, linewidth=lineWidth)
 
         plt.show()
 
