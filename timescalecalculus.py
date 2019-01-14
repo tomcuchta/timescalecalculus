@@ -24,6 +24,14 @@ class timescale:
         self.ts = ts
         self.name = name
 
+        # The following two dictionary data members are used to for the memoization of the g_k and h_k functions of this class.
+        self.memo_g_k = {}
+        self.memo_h_k = {}
+
+        self.g_k_callCount = 0 # Temporary data member used to test memoization of g_k function.
+        self.h_k_callCount = 0 # Temporary data member used to test memoization of h_k function.
+        self.g_k_not_memoized_callCount = 0 # Temporary data member used to test the g_k_not_memoized function.
+
         #
         # The following code validates the user-specified timescale to ensure that there are no overlaps such as:
         #   - a point given more than once
@@ -231,6 +239,98 @@ class timescale:
         sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
 
         return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
+
+    #
+    #
+    # Generalized g_k polynomial from page 38 with memoization.
+    #
+    #
+    def g_k(self, k, t, s):
+        self.g_k_callCount = self.g_k_callCount + 1
+
+        if (k < 0):
+            raise Exception("k should never be less than 0!")
+
+        elif (k != 0):
+            currentKey = str(k) + ":" + str(t) + ":" + str(s)
+
+            if currentKey in self.memo_g_k:
+#                print("found key =", currentKey, "with value =", self.memo_g_k[currentKey])
+
+                return self.memo_g_k[currentKey]
+
+            else:
+                def g(x):
+                   return self.g_k(k - 1, self.sigma(x), s)
+
+                integralResult = self.dintegral(g, t, s)
+
+                self.memo_g_k[currentKey] = integralResult
+
+#                print("computed integral =", integralResult, "and created key =", currentKey, "with value =", integralResult)
+
+                return integralResult
+
+        elif (k == 0):
+#            print("***** g_k : k == 0 *****")
+
+            return 1
+
+    #
+    #
+    # Not memoized version of the g_k function of this class. Used for testing.
+    #
+    #
+    def g_k_not_memoized(self, k, t, s):
+        self.g_k_not_memoized_callCount = self.g_k_not_memoized_callCount + 1
+
+        if (k < 0):
+            raise Exception("k should never be less than 0!")
+
+        elif (k != 0):
+           def g(x):
+               return self.g_k_not_memoized(k - 1, self.sigma(x), s)
+
+           return self.dintegral(g, t, s)
+
+        elif (k == 0):
+            return 1
+
+    #
+    #
+    # Generalized h_k polynomial from page 38 with memoization.
+    #
+    #
+    def h_k(self, k, t, s):
+        self.h_k_callCount = self.h_k_callCount + 1
+
+        if (k < 0):
+            raise Exception("k should never be less than 0!")
+
+        elif (k != 0):
+            currentKey = str(k) + ":" + str(t) + ":" + str(s)
+
+            if currentKey in self.memo_h_k:
+#                print("found key =", currentKey, "with value =", self.memo_h_k[currentKey])
+
+                return self.memo_h_k[currentKey]
+
+            else:
+                def h(x):
+                    return self.h_k(k - 1, x, s)
+
+                integralResult = self.dintegral(h, t, s)
+
+                self.memo_h_k[currentKey] = integralResult
+
+#                print("computed integral =", integralResult, "and created key =", currentKey, "with value =", integralResult)
+
+                return integralResult
+
+        elif (k == 0):
+#            print("***** h_k : k == 0 *****")
+
+            return 1
 
     #
     #
