@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 def product(factors):
         return reduce(operator.mul, factors, 1)
 
-
 #
 #
 # Time scale class
@@ -24,13 +23,9 @@ class timescale:
         self.ts = ts
         self.name = name
 
-        # The following two dictionary data members are used to for the memoization of the g_k and h_k functions of this class.
+        # The following two dictionary data members are used for the memoization of the g_k and h_k functions of this class.
         self.memo_g_k = {}
         self.memo_h_k = {}
-
-        self.g_k_callCount = 0 # Temporary data member used to test memoization of g_k function.
-        self.h_k_callCount = 0 # Temporary data member used to test memoization of h_k function.
-        self.g_k_not_memoized_callCount = 0 # Temporary data member used to test the g_k_not_memoized function.
 
         #
         # The following code validates the user-specified timescale to ensure that there are no overlaps such as:
@@ -204,7 +199,6 @@ class timescale:
         elif not sIsAnElement:
             raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
 
-
         # Validation code ends
 
         points = []
@@ -246,17 +240,13 @@ class timescale:
     #
     #
     def g_k(self, k, t, s):
-        self.g_k_callCount = self.g_k_callCount + 1
-
         if (k < 0):
-            raise Exception("k should never be less than 0!")
+            raise Exception("g_k(): k should never be less than 0!")
 
         elif (k != 0):
             currentKey = str(k) + ":" + str(t) + ":" + str(s)
 
             if currentKey in self.memo_g_k:
-#                print("found key =", currentKey, "with value =", self.memo_g_k[currentKey])
-
                 return self.memo_g_k[currentKey]
 
             else:
@@ -267,31 +257,7 @@ class timescale:
 
                 self.memo_g_k[currentKey] = integralResult
 
-#                print("computed integral =", integralResult, "and created key =", currentKey, "with value =", integralResult)
-
                 return integralResult
-
-        elif (k == 0):
-#            print("***** g_k : k == 0 *****")
-
-            return 1
-
-    #
-    #
-    # Not memoized version of the g_k function of this class. Used for testing.
-    #
-    #
-    def g_k_not_memoized(self, k, t, s):
-        self.g_k_not_memoized_callCount = self.g_k_not_memoized_callCount + 1
-
-        if (k < 0):
-            raise Exception("k should never be less than 0!")
-
-        elif (k != 0):
-           def g(x):
-               return self.g_k_not_memoized(k - 1, self.sigma(x), s)
-
-           return self.dintegral(g, t, s)
 
         elif (k == 0):
             return 1
@@ -302,17 +268,13 @@ class timescale:
     #
     #
     def h_k(self, k, t, s):
-        self.h_k_callCount = self.h_k_callCount + 1
-
         if (k < 0):
-            raise Exception("k should never be less than 0!")
+            raise Exception("h_k(): k should never be less than 0!")
 
         elif (k != 0):
             currentKey = str(k) + ":" + str(t) + ":" + str(s)
 
             if currentKey in self.memo_h_k:
-#                print("found key =", currentKey, "with value =", self.memo_h_k[currentKey])
-
                 return self.memo_h_k[currentKey]
 
             else:
@@ -323,13 +285,9 @@ class timescale:
 
                 self.memo_h_k[currentKey] = integralResult
 
-#                print("computed integral =", integralResult, "and created key =", currentKey, "with value =", integralResult)
-
                 return integralResult
 
         elif (k == 0):
-#            print("***** h_k : k == 0 *****")
-
             return 1
 
     #
@@ -385,6 +343,188 @@ class timescale:
 
     #
     #
+    # Experimental Ordinary Differential Equation solver for equations of the form
+    #   y'(t) = p(t)*y(t)
+    # where t_0 is the starting value in the timescale and
+    #   y_0 = y(t_0) is the initial value provided by the user.
+    #
+    # Variables:
+    #   "t_current" is the current value of t where t is a value in the timescale.
+    #   "t_target" is the timescale value for which y(t) should be evaluated and returned.
+    #   "y_current" holds the value obtained from y(t_current).
+    #   "y_prime" is the function y'(t) of the ODE y'(t) = p(t)*y(t).
+    #
+    # The function will solve for the next t value until the value of y(t_target) is obtained.
+    # y(t_target) is then returned.
+    # Currently, t_target > t_0 is a requirement -- solving for a t_target < t_0 is not supported.
+    #
+    #
+    def solve_ode_for_t(self, y_0, t_0, t_target, y_prime): # Note: y(t_0) = y_0
+        print("solve_ode_for_t arguments:")
+        print("y_0 =", y_0)
+        print("t_0 =", t_0)
+        print("t_target =", t_target)
+        print("")
+        
+        # The following is more validation code -- this is very similar to the validation code in the dIntegral function.
+        #----------------------------------------------------------------------------#
+        
+        t_in_ts = False
+        t_0_in_ts = False
+        discretePoint = False
+        
+        for x in self.ts:
+            if not isinstance(x, list) and t_target == x:
+                t_in_ts = True
+                
+            if not isinstance(x, list) and t_0 == x: 
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if isinstance(x, list) and t_target <= x[1] and t_target >= x[0]:
+                t_in_ts = True
+            
+            if isinstance(x, list) and t_0 < x[1] and t_0 >= x[0]:
+                discretePoint = False
+                t_0_in_ts = True
+                
+            if isinstance(x, list) and t_0 == x[1]:
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if t_in_ts and t_0_in_ts:                
+                break
+        
+        if t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 is not a value in the timescale.")
+        
+        if not t_in_ts and t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_target is not a value in the timescale.")
+        
+        if not t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
+        
+        #----------------------------------------------------------------------------#
+        
+        t_current = t_0
+        y_current = y_0
+        
+        while True:
+            if discretePoint:                
+                print("Solving right scattered point where:")
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print("y_prime(t_current, y_current) =", y_prime(t_current, y_current))
+                print("self.mu(t_current) =", self.mu(t_current))
+                print()            
+  
+                y_sigma_of_t_current = y_current + y_prime(t_current, y_current) * self.mu(t_current)
+                
+                t_next = self.sigma(t_current)
+                
+                print("t_next = self.sigma(t_current) =", t_next)
+                print()                
+                print("Result:")
+                print("y_sigma_of_t_current =", y_sigma_of_t_current)
+                print()
+                                
+                if t_target == t_next:
+                    print("t_target == t_next -> returning y_sigma_of_t_current\n")
+                    return y_sigma_of_t_current
+                
+                if self.isDiscretePoint(t_next):
+                    print("[NEXT IS DISCRETE POINT]")
+                    
+                else:
+                    print("[NEXT IS NOT DISCRETE POINT]")
+                    discretePoint = False
+                
+                t_current = t_next
+                y_current = y_sigma_of_t_current                
+                                
+            else:
+                print("Solving right dense point where:")                    
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print()
+                
+                ODE = integrate.ode(y_prime)
+
+                ODE.set_initial_value(y_current, t_current)
+                
+                if self.isDiscretePoint(t_current):
+                    raise Exception("t_current is NOT in a list/interval! Something went wrong!")
+                
+                else:
+                    interval_of_t_current = self.getCorrespondingInterval(t_current)
+                    
+                    print("Integration conditions:")
+                    print("t_current =", t_current)
+                    print("interval_of_t_current =", interval_of_t_current)
+                    
+                    if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
+                        print("Integrating to t =", t_target)
+                        print()
+                        ODE_integration_result = ODE.integrate(t_target)
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        return ODE_integration_result
+                    
+                    elif t_target > interval_of_t_current[1]:
+                        print("Integrating to t =", interval_of_t_current[1])
+                        print()
+                        ODE_integration_result = ODE.integrate(interval_of_t_current[1])
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        t_current = interval_of_t_current[1]
+                        y_current = ODE_integration_result
+                        
+                        print("[NEXT IS DISCRETE POINT]")
+                        discretePoint = True
+
+                if not ODE.successful():
+                    raise Exception("ODE.successful() returned False!");
+    
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Simply checks whether the argument, t, is a discrete point or in an interval of the timescale.
+    #
+    #
+    def isDiscretePoint(self, t):
+        for x in self.ts:
+            if not isinstance(x, list) and t == x:
+                return True           
+            
+            if isinstance(x, list) and t <= x[1] and t >= x[0]:
+                return False
+        
+        raise Exception("isDiscretePoint(): t was neither a discrete point nor in an interval!")
+    
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Returns the interval in which t is located for the current timescale.
+    # Will raise an exception if t is not in an interval.
+    #
+    #
+    def getCorrespondingInterval(self, t):
+        for x in self.ts:
+            if isinstance(x, list) and t <= x[1] and t >= x[0]:
+                return x
+        
+        raise Exception("getCorrespondingInterval(): t not in an interval!") 
+    
+    #
+    #
     # Plotting functionality.
     #
     # Required arguments:
@@ -400,7 +540,7 @@ class timescale:
     #  They accept string arguments of 3-part character combinations that represent a color, marker style, and line style.
     #  For instance the string "-r." indicates that the current (x, y) points should be plotted with a connected line
     #  (represented by the "-"), in a red color (represented by the "r"), and with a point marker (represented by the ".").
-    #  These character combinations can by in any order UNLESS the reordering changes the interpretation of the character combination.
+    #  These character combinations can be in any order UNLESS the reordering changes the interpretation of the character combination.
     #  For instance, the string "r-." does not produce the same result as the string "-r.".
     #  This is because "-." indicates a "dash-dot line style" and is therefore no longer interpreted as a "point marker" with a "solid line style".
     #  See the notes section of this resource for more information: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.plot.html
