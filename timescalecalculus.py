@@ -664,6 +664,169 @@ class timescale:
                         
                         print("[NEXT IS DISCRETE POINT]")
                         discretePoint = True
+    #
+    #
+    # Dynamic system solver
+    #
+    # y_0 is a list with n items and y_prime_vector is a system of n equations -- they must be the same length/contain the same number of elements.
+    #
+    #
+    def solve_ode_system_for_t(self, y_0, t_0, t_target, y_prime, stepSize = 0.0001): # Note: y(t_0) = y_0
+        print("solve_ode_for_t arguments:")
+        print("y_0 =", y_0)
+        print("t_0 =", t_0)
+        print("t_target =", t_target)
+        print("")
+        
+        # The following is more validation code -- this is very similar to the validation code in the dIntegral function.
+        #----------------------------------------------------------------------------#
+        
+        t_in_ts = False
+        t_0_in_ts = False
+        discretePoint = False
+        
+        for x in self.ts:
+            if not isinstance(x, list) and t_target == x:
+                t_in_ts = True
+                
+            if not isinstance(x, list) and t_0 == x: 
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if isinstance(x, list) and t_target <= x[1] and t_target >= x[0]:
+                t_in_ts = True
+            
+            if isinstance(x, list) and t_0 < x[1] and t_0 >= x[0]:
+                discretePoint = False
+                t_0_in_ts = True
+                
+            if isinstance(x, list) and t_0 == x[1]:
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if t_in_ts and t_0_in_ts:                
+                break
+        
+        if t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 is not a value in the timescale.")
+        
+        if not t_in_ts and t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_target is not a value in the timescale.")
+        
+        if not t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
+        
+        #----------------------------------------------------------------------------#
+        
+        t_current = t_0
+        y_current = y_0
+               
+        while self.isInTimescale(t_current):
+            if discretePoint:                
+                print("Solving right scattered point where:")
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print("y_prime(y_current, t_current) =", y_prime(y_current, t_current))
+                print("self.mu(t_current) =", self.mu(t_current))
+                print()            
+                                
+                #------------------------------#
+                
+                print("y_prime(y_current, t_current) =", y_prime(y_current, t_current), "self.mu(t_current) =", self.mu(t_current))
+                
+                temp1 = list(map(lambda x: x * self.mu(t_current), y_prime(y_current, t_current)))
+                     
+                print("y_current:", y_current, "temp1:", temp1)
+                
+                temp2 = list(map(lambda x, y: x + y, y_current, temp1))
+                
+                print("temp2 =", temp2)
+                
+                y_sigma_of_t_current = temp2                
+                
+                #------------------------------#
+                    
+                t_next = self.sigma(t_current)
+                
+                print("t_next = self.sigma(t_current) =", t_next)
+                print()                
+                print("Result:")
+                print("y_sigma_of_t_current =", y_sigma_of_t_current)
+                print()
+                                
+                if t_target == t_next:
+                    print("t_target == t_next -> returning y_sigma_of_t_current\n")
+                    return y_sigma_of_t_current
+                
+                if self.isDiscretePoint(t_next):
+                    print("[NEXT IS DISCRETE POINT]")
+                    
+                else:
+                    print("[NEXT IS NOT DISCRETE POINT]")
+                    discretePoint = False
+                
+                t_current = t_next
+                y_current = y_sigma_of_t_current                
+                                
+            else:
+                print("Solving right dense point where:")                    
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print()
+                
+                if self.isDiscretePoint(t_current):
+                    raise Exception("t_current is NOT in a list/interval! Something went wrong!")
+                
+                else:
+                    interval_of_t_current = self.getCorrespondingInterval(t_current)
+                    
+                    print("Integration conditions:")
+                    print("t_current =", t_current)
+                    print("interval_of_t_current =", interval_of_t_current)
+                    
+                    if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
+                        print("Integrating to t =", t_target)
+                        print()                                             
+                        
+                        current_interval = np.arange(t_current, t_target + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
+                        
+                        return ODE_integration_result
+                    
+                    elif t_target > interval_of_t_current[1]:
+                        print("Integrating to t =", interval_of_t_current[1])
+                        print()
+                        
+                        current_interval = np.arange(t_current, interval_of_t_current[1] + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)                        
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
+                        
+                        t_current = interval_of_t_current[1]
+                        y_current = ODE_integration_result
+                        
+                        print("[NEXT IS DISCRETE POINT]")
+                        discretePoint = True
     
     #
     #
