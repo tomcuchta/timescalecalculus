@@ -344,15 +344,32 @@ class timescale:
     #
     #
     # Experimental Ordinary Differential Equation solver for equations of the form
-    #   y'(t) = p(t)*y(t)
-    # where t_0 is the starting value in the timescale and
-    #   y_0 = y(t_0) is the initial value provided by the user.
     #
-    # Variables:
-    #   "t_current" is the current value of t where t is a value in the timescale.
-    #   "t_target" is the timescale value for which y(t) should be evaluated and returned.
+    #   y'(t) = p(t)*y(t)
+    #
+    # where t_0 is the starting value in the timescale and
+    #
+    #   y_0 = y(t_0) 
+    #
+    # is the initial value provided by the user.
+    #
+    # Arguments:
+    #   "y_0" is the initial value assigned to y(t_0) that is used as a starting point to evaluate the ODE.
+    #
+    #   "t_0" is the initial value that is considered the starting point in the timescale from which to solve subsequent points.
+    #   t_0 is the value that is plugged into y to determine y_0 via: y_0 = y(t_0).
+    #
+    #   "t_target" is the timescale value for which y should be evaluated and returned.
+    #
+    #   "y_prime" is the function y'(t) of the ODE y'(t) = p(t)*y(t). 
+    #   NOTE: "y_prime" MUST be defined such that the arguments ("t" and "y") appear in this order: y_prime(t, y).
+    #   If this particular order is not used, then the solve_ode_for_t() function will plug in the wrong values for t and y when solving.
+    #   This means that the solve_ode_for_t() function will (except in specific cases like when t = y) return an incorrect result.
+    #
+    # Other Variables:
+    #   "t_current" is the current value of t. t must be a value in the timescale.
+    #
     #   "y_current" holds the value obtained from y(t_current).
-    #   "y_prime" is the function y'(t) of the ODE y'(t) = p(t)*y(t).
     #
     # The function will solve for the next t value until the value of y(t_target) is obtained.
     # y(t_target) is then returned.
@@ -409,7 +426,9 @@ class timescale:
         t_current = t_0
         y_current = y_0
         
-        while True:
+        ODE = integrate.ode(y_prime)
+        
+        while self.isInTimescale(t_current): # Technically safer than "while True:"
             if discretePoint:                
                 print("Solving right scattered point where:")
                 print("t_current =", t_current)
@@ -449,9 +468,7 @@ class timescale:
                 print("y_current =", y_current)
                 print("t_target =", t_target)
                 print()
-                
-                ODE = integrate.ode(y_prime)
-
+                                      
                 ODE.set_initial_value(y_current, t_current)
                 
                 if self.isDiscretePoint(t_current):
@@ -493,6 +510,177 @@ class timescale:
                 if not ODE.successful():
                     raise Exception("ODE.successful() returned False!");
     
+    #
+    #
+    # This function is another version of the solve_ode_for_t() function.
+    # It uses scipy.integrate.odeint to integrate over intervals rather than the scipy.integrate.ode method used by the solve_ode_for_t() function.
+    # In general, it seems to be less accurate than solve_ode_for_t().
+    # The additional stepSize argument (default value = 0.0001) can be used to somewhat mitigate this inaccuracy. 
+    # However, even with extremely small step sizes (like stepSize = 0.0000001), solve_ode_for_t() seems to be better.
+    #
+    # NOTE: The scipy.integrate.odeint function requires that the argument function, y_prime(), has its arguments in a particular order.
+    # The required order is exactly inverse to what is required by the scipy.integrate.ode function -- this has a high potential for user error.
+    # y_prime for this function must be of the form: y_prime(y, t).
+    # If y_prime(t, y) is provided, nonsensical results will be returned since the wrong values will be plugged into y and t.
+    #
+    #
+    def solve_ode_for_t_with_odeint(self, y_0, t_0, t_target, y_prime, stepSize = 0.0001): # Note: y(t_0) = y_0
+        print("solve_ode_for_t arguments:")
+        print("y_0 =", y_0)
+        print("t_0 =", t_0)
+        print("t_target =", t_target)
+        print("")
+        
+        # The following is more validation code -- this is very similar to the validation code in the dIntegral function.
+        #----------------------------------------------------------------------------#
+        
+        t_in_ts = False
+        t_0_in_ts = False
+        discretePoint = False
+        
+        for x in self.ts:
+            if not isinstance(x, list) and t_target == x:
+                t_in_ts = True
+                
+            if not isinstance(x, list) and t_0 == x: 
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if isinstance(x, list) and t_target <= x[1] and t_target >= x[0]:
+                t_in_ts = True
+            
+            if isinstance(x, list) and t_0 < x[1] and t_0 >= x[0]:
+                discretePoint = False
+                t_0_in_ts = True
+                
+            if isinstance(x, list) and t_0 == x[1]:
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if t_in_ts and t_0_in_ts:                
+                break
+        
+        if t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 is not a value in the timescale.")
+        
+        if not t_in_ts and t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_target is not a value in the timescale.")
+        
+        if not t_in_ts and not t_0_in_ts:
+            raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
+        
+        #----------------------------------------------------------------------------#
+        
+        t_current = t_0
+        y_current = y_0
+               
+        while self.isInTimescale(t_current):
+            if discretePoint:                
+                print("Solving right scattered point where:")
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print("y_prime(y_current, t_current) =", y_prime(y_current, t_current))
+                print("self.mu(t_current) =", self.mu(t_current))
+                print()            
+  
+                y_sigma_of_t_current = y_current + y_prime(y_current, t_current) * self.mu(t_current)
+                
+                t_next = self.sigma(t_current)
+                
+                print("t_next = self.sigma(t_current) =", t_next)
+                print()                
+                print("Result:")
+                print("y_sigma_of_t_current =", y_sigma_of_t_current)
+                print()
+                                
+                if t_target == t_next:
+                    print("t_target == t_next -> returning y_sigma_of_t_current\n")
+                    return y_sigma_of_t_current
+                
+                if self.isDiscretePoint(t_next):
+                    print("[NEXT IS DISCRETE POINT]")
+                    
+                else:
+                    print("[NEXT IS NOT DISCRETE POINT]")
+                    discretePoint = False
+                
+                t_current = t_next
+                y_current = y_sigma_of_t_current                
+                                
+            else:
+                print("Solving right dense point where:")                    
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print()
+                
+                if self.isDiscretePoint(t_current):
+                    raise Exception("t_current is NOT in a list/interval! Something went wrong!")
+                
+                else:
+                    interval_of_t_current = self.getCorrespondingInterval(t_current)
+                    
+                    print("Integration conditions:")
+                    print("t_current =", t_current)
+                    print("interval_of_t_current =", interval_of_t_current)
+                    
+                    if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
+                        print("Integrating to t =", t_target)
+                        print()                                             
+                        
+                        current_interval = np.arange(t_current, t_target + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)
+                        ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        return ODE_integration_result
+                    
+                    elif t_target > interval_of_t_current[1]:
+                        print("Integrating to t =", interval_of_t_current[1])
+                        print()
+                        
+                        current_interval = np.arange(t_current, interval_of_t_current[1] + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)
+                        ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
+                        
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
+                        
+                        t_current = interval_of_t_current[1]
+                        y_current = ODE_integration_result
+                        
+                        print("[NEXT IS DISCRETE POINT]")
+                        discretePoint = True
+    
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Simply checks whether the argument, t, is a value in the timescale.
+    # If t is in the timescale, it will return True. Otherwise, it will return False.
+    #
+    def isInTimescale(self, t):
+        for ts_item in self.ts:
+            if not isinstance(ts_item, list) and ts_item == t:
+                return True
+
+            elif isinstance(ts_item, list) and  (t >= ts_item[0] and t <= ts_item[1]):
+                return True
+        
+        return False
+                
     #
     #
     # Utility function to avoid repeated code.
