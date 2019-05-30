@@ -343,7 +343,7 @@ class timescale:
 
     #
     #
-    # Experimental Ordinary Differential Equation solver for equations of the form
+    # Ordinary Differential Equation solver for equations of the form
     #
     #   y'(t) = p(t)*y(t)
     #
@@ -666,9 +666,29 @@ class timescale:
                         discretePoint = True
     #
     #
-    # Dynamic system solver
+    # Ordinary Differential Equation System Solver
     #
-    # y_0 is a list with n items and y_prime_vector is a system of n equations -- they must be the same length/contain the same number of elements.
+    # Arguments:
+    #   "y_0" is a list of the initial values assigned to y(t_0). These are used as a starting point from which to evaluate the system.
+    #
+    #   "t_0" is the initial value that is considered the starting point in the timescale from which to solve subsequent points.
+    #   Initially, t_0 is the value that is plugged into y to determine y_0 via: y_0 = y(t_0).
+    #
+    #   "t_target" is the timescale value for which y should be evaluated and returned.
+    #   Since this function solves a system of equations, the result will be a list of values that constitute the results for each of the equations in the system for t_target.
+    #
+    #   "y_prime" is the system of equations where each individual equation is of the form y'(t) = p(t)*y(t). 
+    #   NOTE: Since this solver uses the scipy.integrate.odeint function to obtain its result, y_prime MUST be defined with a specific format.
+    #   As an example, for a system of two equations, y_prime would have to defined in the following manner:
+    #    
+    #       def y_prime_vector(vector, t): # Argument order is required by the scipy.integrate.odeint class -- "y_prime_vector(y, vector)" will result in incorrect results
+    #           x, y = vector # Extract and store the first item from "vector" into x and the second item into y
+    #    
+    #           dt_vector = [x*t, y*t*t] # Define the system of equations
+    #
+    #           return dt_vector # Return the system
+    #   
+    # NOTE: If the number of items in y_0 is not the same as the number of equations in y_prime, then this solver will fail.
     #
     #
     def solve_ode_system_for_t(self, y_0, t_0, t_target, y_prime, stepSize = 0.0001): # Note: y(t_0) = y_0
