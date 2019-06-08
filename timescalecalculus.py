@@ -421,6 +421,12 @@ class timescale:
         if not t_in_ts and not t_0_in_ts:
             raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
         
+        if t_0 == t_target:
+            return y_0
+        
+        elif t_0 > t_target:
+            raise Exception("solve_ode_for_t: t_0 cannot be greater than t_target.")
+        
         #----------------------------------------------------------------------------#
         
         t_current = t_0
@@ -562,13 +568,19 @@ class timescale:
                 break
         
         if t_in_ts and not t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_0 is not a value in the timescale.")
+            raise Exception("solve_ode_for_t_with_odeint: t_0 is not a value in the timescale.")
         
         if not t_in_ts and t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_target is not a value in the timescale.")
+            raise Exception("solve_ode_for_t_with_odeint: t_target is not a value in the timescale.")
         
         if not t_in_ts and not t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
+            raise Exception("solve_ode_for_t_with_odeint: t_0 and t_target are not values in the timescale.")
+        
+        if t_0 == t_target:
+            return y_0
+        
+        elif t_0 > t_target:
+            raise Exception("solve_ode_for_t_with_odeint: t_0 cannot be greater than t_target.")
         
         #----------------------------------------------------------------------------#
         
@@ -730,16 +742,22 @@ class timescale:
                 break
         
         if t_in_ts and not t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_0 is not a value in the timescale.")
+            raise Exception("solve_ode_system_for_t: t_0 is not a value in the timescale.")
         
         if not t_in_ts and t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_target is not a value in the timescale.")
+            raise Exception("solve_ode_system_for_t: t_target is not a value in the timescale.")
         
         if not t_in_ts and not t_0_in_ts:
-            raise Exception("solve_ode_for_t: t_0 and t_target are not values in the timescale.")
+            raise Exception("solve_ode_system_for_t: t_0 and t_target are not values in the timescale.")
+        
+        if t_0 == t_target:
+            return y_0
+        
+        elif t_0 > t_target:
+            raise Exception("solve_ode_system_for_t: t_0 cannot be greater than t_target.")
         
         #----------------------------------------------------------------------------#
-        
+                
         t_current = t_0
         y_current = y_0
                
