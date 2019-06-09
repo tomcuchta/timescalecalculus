@@ -362,7 +362,13 @@ class timescale:
 
         dexp_p2 = self.dexp_p(lambda x: p(x) * -1j, t, s)
 
-        return ((dexp_p1 + dexp_p2) / 2)
+        result = ((dexp_p1 + dexp_p2) / 2)
+        
+        if np.imag(result) == 0:
+            return np.real(result)
+        
+        else:
+            return result
 
     #
     #
@@ -374,7 +380,13 @@ class timescale:
 
         dexp_p2 = self.dexp_p(lambda x: p(x) * -1j, t, s)
 
-        return ((dexp_p1 - dexp_p2) / 2j)
+        result = ((dexp_p1 - dexp_p2) / 2j)
+
+        if np.imag(result) == 0:
+            return np.real(result)
+        
+        else:
+            return result
 
     #
     #
