@@ -26,6 +26,13 @@ class timescale:
         # The following two dictionary data members are used for the memoization of the g_k and h_k functions of this class.
         self.memo_g_k = {}
         self.memo_h_k = {}
+        
+        # The following data member allows users to access the functions of the matplotlib.pyplot interface.
+        # This means that a user has more control over the plotting functionality of this class.
+        # For instance, the xlabel and ylabel functions of the pyplot interface can be set via this data member.
+        # Then, whenever the plot() or scatter() functions of this class are called and displayed (via plt.show()), the xlabel and ylabel will display whatever the user set them to.
+        # See this resource for a list of available functionality: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.html
+        self.plt = plt
 
         #
         # The following code validates the user-specified timescale to ensure that there are no overlaps such as:
@@ -295,8 +302,25 @@ class timescale:
     # delta exponential
     #
     #
-    def dexp_p(self,p,t,s):
-        return product([1+self.mu(x)*p(x) for x in self.ts if x >= s and x<t])
+    def dexp_p(self, p, t, s):    
+        values = []
+    
+        for x in self.ts:            
+            if not isinstance(x, list):
+                if x >= s and x < t:
+                    values.append(x)
+                
+            else:
+                if x[0] >= s and x[1] < t:
+                    raise Exception("dexp_p(): The entire interval, [" + str(x[0]) + ", " + str(x[1]) + "], is in the list of values.")
+                    
+                elif x[0] >= s and x[0] < t:
+                    raise Exception("dexp_p(): The starting value, " + str(x[0]) + ", of the interval, [" + str(x[0]) + ", " + str(x[1]) + "], is in the list of values.")
+                
+                elif x[1] == s:
+                    values.append(x[1])
+                            
+        return product([1 + self.mu(x)*p(x) for x in values if x >= s and x < t])
 
     #
     #
@@ -919,40 +943,32 @@ class timescale:
     #
     # Plotting functionality.
     #
-    # Required arguments:
-    #  f:
-    #  The function that will determine the y values of the graph - the x values are determined by the current timescale values.
-    #
-    #  stepSize:
-    #  The accuracy to which the intervals are drawn in the graph - the smaller the value, the higher the accuracy and overhead.
+    # Required argument:
+    #   f:
+    #   The function that will determine the y values of the graph - the x values are determined by the current timescale values.
     #
     # Optional arguments:
-    #  discreteStyle and intervalStyle:
-    #  These arguments determine the color, marker, and line styles of the graph.
-    #  They accept string arguments of 3-part character combinations that represent a color, marker style, and line style.
-    #  For instance the string "-r." indicates that the current (x, y) points should be plotted with a connected line
-    #  (represented by the "-"), in a red color (represented by the "r"), and with a point marker (represented by the ".").
-    #  These character combinations can be in any order UNLESS the reordering changes the interpretation of the character combination.
-    #  For instance, the string "r-." does not produce the same result as the string "-r.".
-    #  This is because "-." indicates a "dash-dot line style" and is therefore no longer interpreted as a "point marker" with a "solid line style".
-    #  See the notes section of this resource for more information: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.plot.html
+    #   stepSize:
+    #   The accuracy to which the intervals are drawn in the graph - the smaller the value, the higher the accuracy and overhead.
+    #  
+    #   discreteStyle, intervalStyle:
+    #   These arguments determine the color, marker, and line styles of the graph.
+    #   They accept string arguments of 3-part character combinations that represent a color, marker style, and line style.
+    #   For instance the string "-r." indicates that the current (x, y) points should be plotted with a connected line
+    #   (represented by the "-"), in a red color (represented by the "r"), and with a point marker (represented by the ".").
+    #   These character combinations can be in any order UNLESS the reordering changes the interpretation of the character combination.
+    #   For instance, the string "r-." does not produce the same result as the string "-r.".
+    #   This is because "-." indicates a "dash-dot line style" and is therefore no longer interpreted as a "point marker" with a "solid line style".
+    #   See the notes section of this resource for more information: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.plot.html
     #
-    #  markerSize:
-    #  Determines the size of the any markers used in the graph.
+    #   **kwargs:
+    #   This argument gives the user access to all the arguments of the matplotlib.pyplot.plot function (this includes markersize, linewidth, color, label, and dashes).
+    #   For a list of all available parameters, see: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.plot.html
     #
-    #  lineWidth:
-    #  Determines the width of any lines in the graph.
+    # NOTE: To display plots that are created with this function, call the show() function of the plt data member of this class.
     #
     #
-    def plot(self, f, stepSize, discreteStyle='b.', intervalStyle='r-', markerSize=4, lineWidth=2):
-        # Testing code start
-        print("discreteStyle =", discreteStyle)
-        print("intervalStyle =", intervalStyle)
-        print("markerSize =", markerSize)
-        print("lineWidth =", lineWidth)
-        print("\n-----------------------------------\n")
-        # Testing code end
-
+    def plot(self, f, stepSize=0.01, discreteStyle='b.', intervalStyle='r-', **kwargs): #markerSize=2, lineWidth=2, color, label, dashes):
         xDiscretePoints = []
         yDiscretePoints = []
 
@@ -975,16 +991,58 @@ class timescale:
                 xDiscretePoints.append(tsItem)
                 yDiscretePoints.append(f(tsItem))
 
-        plt.xlabel("tsValues")
-        plt.ylabel("f(tsValues)")
-
-        plt.plot(xDiscretePoints, yDiscretePoints, discreteStyle, markersize=markerSize, linewidth=lineWidth)
+        plt.plot(xDiscretePoints, yDiscretePoints, discreteStyle, **kwargs)    
 
         for xyIntervalPointsPair in intervals:
-            plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalStyle, markersize=markerSize, linewidth=lineWidth)
+            plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalStyle, **kwargs)
+    
+    #
+    #
+    # Scatter plotting functionality.
+    #
+    # Required argument:
+    #   f:
+    #   The function that will determine the y values of the graph - the x values are determined by the current timescale values.
+    #
+    # Optional arguments:
+    #   stepSize:
+    #   The accuracy to which the intervals are drawn in the graph - the smaller the value, the higher the accuracy and overhead.
+    #
+    #   **kwargs:
+    #   This argument gives the user access to all the arguments of the matplotlib.pyplot.scatter function (this includes marker, color, and label).
+    #   For a list of all available parameters, see: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.scatter.html
+    #
+    # NOTE: To display plots that are created with this function, call the show() function of the plt data member of this class.
+    #
+    #
+    def scatter(self, f, stepSize=0.01, **kwargs):
+        xDiscretePoints = []
+        yDiscretePoints = []
 
-        plt.show()
+        intervals = []
 
+        for tsItem in self.ts:
+            if isinstance(tsItem, list):
+                xIntervalPoints = []
+                yIntervalPoints = []
+
+                for intervalValue in np.arange(tsItem[0], tsItem[1], stepSize):
+                    xIntervalPoints.append(intervalValue)
+                    yIntervalPoints.append(f(intervalValue))
+
+                xyIntervalPointsPair = [xIntervalPoints, yIntervalPoints]
+
+                intervals.append(xyIntervalPointsPair)
+
+            else:
+                xDiscretePoints.append(tsItem)
+                yDiscretePoints.append(f(tsItem))
+            
+        plt.scatter(xDiscretePoints, yDiscretePoints, **kwargs)    
+
+        for xyIntervalPointsPair in intervals:
+            plt.scatter(xyIntervalPointsPair[0], xyIntervalPointsPair[1], **kwargs)
+    
 #
 #
 # create the time scale of integers {x : a <= x <= b}
