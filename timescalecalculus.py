@@ -299,28 +299,26 @@ class timescale:
 
     #
     #
-    # delta exponential
+    # Cylinder transformation from definition 2.21
     #
     #
-    def dexp_p(self, p, t, s):    
-        values = []
-    
-        for x in self.ts:            
-            if not isinstance(x, list):
-                if x >= s and x < t:
-                    values.append(x)
-                
-            else:
-                if x[0] >= s and x[1] < t:
-                    raise Exception("dexp_p(): The entire interval, [" + str(x[0]) + ", " + str(x[1]) + "], is in the list of values.")
-                    
-                elif x[0] >= s and x[0] < t:
-                    raise Exception("dexp_p(): The starting value, " + str(x[0]) + ", of the interval, [" + str(x[0]) + ", " + str(x[1]) + "], is in the list of values.")
-                
-                elif x[1] == s:
-                    values.append(x[1])
-                            
-        return product([1 + self.mu(x)*p(x) for x in values if x >= s and x < t])
+    def cyl(self, t, z):
+        if (self.mu(t) == 0):
+            return z
+        
+        else:
+            return 1/self.mu(t) * np.log(1 + z*self.mu(t))
+
+    #
+    #
+    # Delta exponential based on definition 2.30
+    #
+    #
+    def dexp_p(self, p, t, s):        
+        def f(t):
+            return self.cyl(t, p(t))
+               
+        return np.exp(self.dintegral(f, t, s))
 
     #
     #
@@ -968,7 +966,7 @@ class timescale:
     # NOTE: To display plots that are created with this function, call the show() function of the plt data member of this class.
     #
     #
-    def plot(self, f, stepSize=0.01, discreteStyle='b.', intervalStyle='r-', **kwargs): #markerSize=2, lineWidth=2, color, label, dashes):
+    def plot(self, f, stepSize=0.01, discreteStyle='b.', intervalStyle='r-', **kwargs):
         xDiscretePoints = []
         yDiscretePoints = []
 
