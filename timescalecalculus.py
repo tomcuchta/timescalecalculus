@@ -237,10 +237,34 @@ class timescale:
 
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
-        sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+        # sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
+        
+        sumOfIntegratedIntervals = sum([self.integrate_complex(f, x[0], x[1]) for x in intervals])
 
         return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
 
+    #
+    #
+    # Utility function to integrate potentially complex functions.
+    #
+    #
+    def integrate_complex(self, f, s, t, **kwargs):
+        def real_component(t):
+            return np.real(f(t))
+            
+        def imaginary_component(t):
+            return np.imag(f(t))
+        
+        real_result = integrate.quad(real_component, s, t, **kwargs)[0]
+        
+        imaginary_result = integrate.quad(imaginary_component, s, t, **kwargs)[0]
+        
+        if imaginary_result == 0:
+            return real_result
+        
+        else:        
+            return real_result + 1j*imaginary_result
+            
     #
     #
     # Generalized g_k polynomial from page 38 with memoization.
