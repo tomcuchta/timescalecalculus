@@ -1026,9 +1026,22 @@ class timescale:
                 yDiscretePoints.append(f(tsItem))
 
         plt.plot(xDiscretePoints, yDiscretePoints, discreteStyle, **kwargs)    
+        
+        labeled = False
+        removedLabel = False
+        
+        if discreteStyle == intervalStyle:            
+            kwargs.pop("label")
+            removedLabel = True       
 
         for xyIntervalPointsPair in intervals:
+            if labeled == True and removedLabel == False:                
+                kwargs.pop("label")    
+                removedLabel = True                  
+                
             plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalStyle, **kwargs)
+            
+            labeled = True
     
     #
     #
@@ -1074,7 +1087,10 @@ class timescale:
             
         plt.scatter(xDiscretePoints, yDiscretePoints, **kwargs)    
 
-        for xyIntervalPointsPair in intervals:
+        if "color" in kwargs:
+            kwargs.pop("label")
+                
+        for xyIntervalPointsPair in intervals:            
             plt.scatter(xyIntervalPointsPair[0], xyIntervalPointsPair[1], **kwargs)
     
 #
