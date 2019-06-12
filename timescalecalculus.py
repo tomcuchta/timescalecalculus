@@ -4,8 +4,6 @@ from scipy import integrate
 from scipy.misc import derivative
 import numpy as np
 import matplotlib.pyplot as plt
-import symengine
-from jitcdde import jitcdde, y, t
 
 #
 #
