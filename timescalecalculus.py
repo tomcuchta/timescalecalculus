@@ -926,12 +926,13 @@ class timescale:
                         
                         # print("[NEXT IS DISCRETE POINT]")
                         discretePoint = True
-    
+        
     #
     #
     # Utility function to avoid repeated code.
     # Simply checks whether the argument, t, is a value in the timescale.
     # If t is in the timescale, it will return True. Otherwise, it will return False.
+    #
     #
     def isInTimescale(self, t):
         for ts_item in self.ts:
@@ -1030,14 +1031,16 @@ class timescale:
         labeled = False
         removedLabel = False
         
-        if discreteStyle == intervalStyle:            
-            kwargs.pop("label")
-            removedLabel = True       
+        if "label" in kwargs:
+            if discreteStyle == intervalStyle:            
+                kwargs.pop("label")
+                removedLabel = True       
 
         for xyIntervalPointsPair in intervals:
-            if labeled == True and removedLabel == False:                
-                kwargs.pop("label")    
-                removedLabel = True                  
+            if "label" in kwargs:
+                if labeled == True and removedLabel == False:                
+                    kwargs.pop("label")    
+                    removedLabel = True                  
                 
             plt.plot(xyIntervalPointsPair[0], xyIntervalPointsPair[1], intervalStyle, **kwargs)
             
@@ -1087,8 +1090,9 @@ class timescale:
             
         plt.scatter(xDiscretePoints, yDiscretePoints, **kwargs)    
 
-        if "color" in kwargs:
-            kwargs.pop("label")
+        if "label" in kwargs:
+            if "color" in kwargs:
+                kwargs.pop("label")
                 
         for xyIntervalPointsPair in intervals:            
             plt.scatter(xyIntervalPointsPair[0], xyIntervalPointsPair[1], **kwargs)
