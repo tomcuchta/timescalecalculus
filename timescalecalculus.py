@@ -4,6 +4,8 @@ from scipy import integrate
 from scipy.misc import derivative
 import numpy as np
 import matplotlib.pyplot as plt
+import symengine
+import jitcdde
 
 #
 #
@@ -926,7 +928,322 @@ class timescale:
                         
                         # print("[NEXT IS DISCRETE POINT]")
                         discretePoint = True
+    
+    #
+    #
+    # Delay Differential Equation Solver (currently unfinished)
+    # Note: make sure that t_0 works with times_of_interest
+    #
+    #
+    def solve_dde_for_t(self, y_0, t_0, t_target, y_prime, y_prime_jitcdde, delay_function, max_delay, past_function, stepSize=0.01, times_of_interest=None, c_backend=False):
+        print("solve_ode_for_t arguments:")
+        print("y_0 =", y_0)
+        print("t_0 =", t_0)        
+        print("t_target =", t_target)
+        print("max_delay =", max_delay)
+        print("past_function =", past_function)
+        print("")
+                
+        # The following is more validation code -- this is very similar to the validation code in the dIntegral function.
+        #----------------------------------------------------------------------------#
         
+        t_in_ts = False
+        t_0_in_ts = False
+        discretePoint = False
+        
+        for x in self.ts:
+            if not isinstance(x, list) and t_target == x:
+                t_in_ts = True
+                
+            if not isinstance(x, list) and t_0 == x: 
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if isinstance(x, list) and t_target <= x[1] and t_target >= x[0]:
+                t_in_ts = True
+            
+            if isinstance(x, list) and t_0 < x[1] and t_0 >= x[0]:
+                discretePoint = False
+                t_0_in_ts = True
+                
+            if isinstance(x, list) and t_0 == x[1]:
+                discretePoint = True
+                t_0_in_ts = True
+            
+            if t_in_ts and t_0_in_ts:                
+                break
+        
+        if t_in_ts and not t_0_in_ts:
+            raise Exception("solve_dde_for_t: t_0 is not a value in the timescale.")
+        
+        if not t_in_ts and t_0_in_ts:
+            raise Exception("solve_dde_for_t: t_target is not a value in the timescale.")
+        
+        if not t_in_ts and not t_0_in_ts:
+            raise Exception("solve_dde_for_t: t_0 and t_target are not values in the timescale.")
+        
+        if t_0 == t_target:
+            return y_0
+        
+        elif t_0 > t_target:
+            raise Exception("solve_dde_for_t: t_0 cannot be greater than t_target.")
+        
+        #----------------------------------------------------------------------------#
+        
+        t_current = t_0
+        y_current = y_0
+        
+        all_results = []
+        
+        past_points = []
+        
+        # if times_of_interest == None:
+            # times_of_interest = [t_0]
+        
+        # else:
+            # times_of_interest.append([t_0])
+        
+        DDE = self.initializeJiTCDDE(y_prime_jitcdde, past_function, max_delay, times_of_interest, c_backend)
+        
+        while self.isInTimescale(t_current):
+            if discretePoint:               
+                print("Solving right scattered point where:")
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print("delay_function(t_current):", delay_function(t_current))
+                print("y_prime(t_current, y_current) =", y_prime(t_current, y_current))
+                print("y_prime(delay_function(t_current), y_current) =", y_prime(delay_function(t_current), y_current))
+                print("self.mu(t_current) =", self.mu(t_current))
+                print()            
+                  
+                #--------#
+                # y_sigma_of_t_current = y_current + y_prime(t_current, y_current) * self.mu(t_current)
+                
+                # t_next = self.sigma(t_current)                
+                #--------#
+                
+                delayed_t_current = delay_function(t_current)
+                
+                if delayed_t_current > t_current:
+                    raise Exception("delayed_t_current > t_current")
+             
+                if self.isInTimescaleWithError(delayed_t_current):
+                    print("delayed_t_current = " + str(delayed_t_current) + " is in timescale")
+                    
+                else:
+                    # print("************************** delayed_t_current = " + str(delayed_t_current) + " is NOT in timescale **************************")
+                    raise Exception("delayed_t_current = " + str(delayed_t_current) + " is NOT in timescale")
+                
+                print()
+                
+                y_sigma_of_t_current = y_current + y_prime(delayed_t_current, y_current) * self.mu(t_current)
+                
+                t_next = self.sigma(t_current)     
+                
+                print("t_next = self.sigma(t_current) =", t_next)
+                print()                
+                print("Result:")
+                print("y_sigma_of_t_current =", y_sigma_of_t_current)
+                print()
+                
+                all_results.append(y_sigma_of_t_current)
+                                
+                if t_target == t_next:
+                    print("t_target == t_next -> returning y_sigma_of_t_current\n")
+                    # return y_sigma_of_t_current
+                    return all_results
+                
+                if self.isDiscretePoint(t_next):
+                    discretePoint = True
+                    print("[NEXT IS DISCRETE POINT]")
+                    print()
+                    
+                else:
+                    print("[NEXT IS NOT DISCRETE POINT]")
+                    print()                    
+                    discretePoint = False
+                
+                past_point = [t_current, [y_current], [y_sigma_of_t_current]]
+                
+                past_points.append(past_point)
+                
+                t_current = t_next
+                y_current = y_sigma_of_t_current
+                
+            else:
+                print("Solving right dense point where:")                    
+                print("t_current =", t_current)
+                print("y_current =", y_current)
+                print("t_target =", t_target)
+                print()
+                
+                if self.isDiscretePoint(t_current):
+                    raise Exception("t_current is NOT in a list/interval! Something went wrong!")
+                
+                else:
+                    interval_of_t_current = self.getCorrespondingInterval(t_current)
+                    
+                    print("Integration conditions:")
+                    print("t_current =", t_current)
+                    print("interval_of_t_current =", interval_of_t_current)
+                    
+                    if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
+                        print("Integrating to t =", t_target)
+                        print()                                             
+                        
+                        current_interval = np.arange(t_current, t_target + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        DDE_integration_result = []                        
+                        DDE = self.updateJiTCDDE(DDE, past_points)                      
+                        past_points = []
+                                                
+                        for time in current_interval:
+                            if time <= t_target:
+                                DDE_integration_result = DDE.integrate_blindly(time)
+                                all_results.append(DDE_integration_result[0])
+                                print("time =", time, " |  integration_result =", DDE_integration_result)
+                        
+                        # if t_target != DDE.t:
+                            # raise Exception("t_target != DDE.t: t_target =", t_target, "| DDE.t =", DDE.t)
+                        
+                        #---Testing-Code-Start---#
+                        
+                        t_current = t_target # The following should hold barring accuracy limitations: t_target != DDE.t
+                        y_current = DDE_integration_result[0]
+                        
+                        # print("t_current is:", t_current)
+                        # print("DDE.t is:", DDE.t)
+                        # print("y_current is:", y_current)   
+                        # print()
+                        
+                        #---Testing-Code-End---#
+                        
+                        print("Result:")
+                        print("time =", t_current, "| DDE_integration_result =", DDE_integration_result)
+                        print()
+                        
+                        # return DDE_integration_result[len(DDE_integration_result) - 1]
+                        return all_results
+                    
+                    elif t_target > interval_of_t_current[1]:
+                        print("Integrating to t =", interval_of_t_current[1])
+                        print()
+                        
+                        current_interval = np.arange(t_current, interval_of_t_current[1] + stepSize, stepSize)
+                        
+                        print(current_interval)
+                        print()
+                        
+                        DDE_integration_result = []                        
+                        DDE = self.updateJiTCDDE(DDE, past_points)                        
+                        past_points = []
+                                                
+                        for time in current_interval:
+                            if time <= t_target:
+                                DDE_integration_result = DDE.integrate_blindly(time)
+                                all_results.append(DDE_integration_result[0])
+                                print("time =", time, " |  integration_result =", DDE_integration_result)
+                        
+                        # if interval_of_t_current[1] != DDE.t:
+                            # raise Exception("interval_of_t_current[1] != DDE.t: interval_of_t_current[1] =", interval_of_t_current[1], "| DDE.t =", DDE.t)
+                        
+                        t_current = interval_of_t_current[1] # The following should hold barring accuracy limitations: interval_of_t_current[1] == DDE.t
+                        y_current = DDE_integration_result[0]
+                        
+                        # print("t_current is:", t_current)
+                        # print("DDE.t is:", DDE.t)
+                        # print("y_current is:", y_current)
+                        # print()
+                        
+                        print("Result:")
+                        print("time =", t_current, "| DDE_integration_result =", DDE_integration_result)
+                        print()
+                        
+                        print("[NEXT IS DISCRETE POINT]")
+                        print()                        
+                        discretePoint = True
+    
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Sets up the "jitcdde" class to integrate over intervals.
+    # For more information see: https://jitcdde.readthedocs.io/en/stable/#the-main-class
+    # This function is used by the solve_dde_for_t() function.
+    #
+    #    
+    def initializeJiTCDDE(self, y_prime_jitcdde, past_function, arg_max_delay, arg_times_of_interest, c_backend):    
+        DDE = jitcdde.jitcdde(y_prime_jitcdde, max_delay=arg_max_delay)                  
+        DDE.past_from_function(past_function, times_of_interest=arg_times_of_interest)
+
+        if c_backend == False:
+            DDE.generate_lambdas()  
+
+        print()
+        
+        # print("state:")
+        # x = DDE.get_state()
+        
+        # for y in x:
+            # print(y)
+        
+        # print()
+
+        return DDE
+
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Updates the past points of the "jitcdde" class.
+    # For more information see: https://jitcdde.readthedocs.io/en/stable/#_jitcdde.jitcdde.add_past_point
+    # This function is used by the solve_dde_for_t() function.
+    #
+    #    
+    def updateJiTCDDE(self, DDE, past_points):
+        # print("state:")
+        # x = DDE.get_state()
+        
+        # for y in x:
+            # print(y)
+        # print()
+    
+        print("past points:")
+        for past_point in past_points:
+            time = past_point[0]
+            state = past_point[1]
+            derivative = past_point[2]            
+            
+            print("time:", time, "| state:", state, "| derivative:", derivative)            
+            
+            DDE.add_past_point(time, state, derivative)
+        
+        print()
+        
+        return DDE 
+    
+    #
+    #
+    # Utility function to avoid repeated code.
+    # Simply checks whether the argument, t, is close to a value in the timescale.
+    # What "close" means is defined by the argument "error".
+    # If t is close to a value in the timescale, it will return True. Otherwise, it will return False.
+    #
+    #
+    def isInTimescaleWithError(self, t, error=0.000000000000001):
+        for ts_item in self.ts:
+            if not isinstance(ts_item, list):
+                if ts_item >= (t - error) and ts_item <= (t + error):
+                    return True
+
+            elif isinstance(ts_item, list):
+                if (t >= (ts_item[0] - error) and t <= (ts_item[1] + error)):
+                    return True
+        
+        return False
+    
     #
     #
     # Utility function to avoid repeated code.
