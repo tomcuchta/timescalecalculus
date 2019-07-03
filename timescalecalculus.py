@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import symengine
 import jitcdde
+import mpmath
 
 #
 #
@@ -28,7 +29,7 @@ class timescale:
         # The following two dictionary data members are used for the memoization of the g_k and h_k functions of this class.
         self.memo_g_k = {}
         self.memo_h_k = {}
-        
+                
         # The following data member allows users to access the functions of the matplotlib.pyplot interface.
         # This means that a user has more control over the plotting functionality of this class.
         # For instance, the xlabel and ylabel functions of the pyplot interface can be set via this data member.
@@ -257,14 +258,16 @@ class timescale:
         def imaginary_component(t):
             return np.imag(f(t))
         
-        real_result = integrate.quad(real_component, s, t, **kwargs)[0]
+        # real_result = integrate.quad(real_component, s, t, **kwargs)[0]        
+        # imaginary_result = integrate.quad(imaginary_component, s, t, **kwargs)[0]
         
-        imaginary_result = integrate.quad(imaginary_component, s, t, **kwargs)[0]
+        real_result = float(mpmath.nstr(mpmath.quad(real_component, [s, t], **kwargs), n=15))        
+        imaginary_result = float(mpmath.nstr(mpmath.quad(imaginary_component, [s, t], **kwargs), n=15))        
         
         if imaginary_result == 0:
             return real_result
         
-        else:        
+        else:
             return real_result + 1j*imaginary_result
             
     #
@@ -932,18 +935,27 @@ class timescale:
     #
     #
     # Delay Differential Equation Solver (currently unfinished)
-    # Note: make sure that t_0 works with times_of_interest
     #
     #
-    def solve_dde_for_t(self, y_0, t_0, t_target, y_prime, JiTCDDE=None, stepSize=0.01):
-        print("solve_ode_for_t arguments:")
-        print("y_0 =", y_0)
-        print("t_0 =", t_0)        
+    def solve_dde_for_t(self, y_values, t_0, t_target, y_prime, JiTCDDE=None, stepSize=0.01):
+        print("solve_dde_for_t arguments:")
+        print("y_0 = y_values[t_0] =", y_values[t_0])
+        print("t_0 =", t_0)  
+        print("y_values =", y_values)
         print("t_target =", t_target)
-        # print("max_delay =", max_delay)
-        # print("past_function =", past_function)
         print("")
-                
+        
+        # The following is validation code for the argument "y_values".
+        #----------------------------------------------------------------------------#
+        
+        for y_value_key in y_values:
+            if not self.isInTimescale(y_value_key):
+                raise Exception("The initial y value, t =", y_value_key, " is not in the timescale")
+        
+        y_0 = y_values[t_0]
+        
+        #----------------------------------------------------------------------------#
+        
         # The following is more validation code -- this is very similar to the validation code in the dIntegral function.
         #----------------------------------------------------------------------------#
         
@@ -992,66 +1004,38 @@ class timescale:
         #----------------------------------------------------------------------------#
         
         t_current = t_0
-        y_current = y_0
+        # y_current = y_0
         
         all_results = []
         
         past_points = []
         
-        # if times_of_interest == None:
-            # times_of_interest = [t_0]
-        
-        # else:
-            # times_of_interest.append([t_0])
-        
-        # JiTCDDE = self.initializeJiTCDDE(y_prime_jitcdde, past_function, max_delay, times_of_interest, c_backend)
-        
-        # JiTCDDE = arg_DDE       
-        
         while self.isInTimescale(t_current):
             if discretePoint:               
                 print("Solving right scattered point where:")
                 print("t_current =", t_current)
-                print("y_current =", y_current)
+                print("y_current = y_values[t_current] =", y_values[t_current])
                 print("t_target =", t_target)
-                # print("delay_function(t_current):", delay_function(t_current))
-                # print("y_prime(t_current, y_current) =", y_prime(t_current, y_current))
-                # print("y_prime(delay_function(t_current), y_current) =", y_prime(delay_function(t_current), y_current))
+                print("y_prime(t_current, y_values) =", y_prime(t_current, y_values))
                 print("self.mu(t_current) =", self.mu(t_current))
                 print()            
-                  
+                
                 #--------#
+                
                 # y_sigma_of_t_current = y_current + y_prime(t_current, y_current) * self.mu(t_current)
                 
-                # t_next = self.sigma(t_current)                
+                # t_next = self.sigma(t_current)       
+                
                 #--------#
                 
-                #--------#   
+                #--------------------#
                 
-                # delayed_t_current = delay_function(t_current)
+                y_sigma_of_t_current = y_values[t_current] + y_prime(t_current, y_values) * self.mu(t_current)
                 
-                # if delayed_t_current > t_current:
-                    # raise Exception("delayed_t_current > t_current")
-             
-                # if self.isInTimescaleWithError(delayed_t_current):
-                    # print("delayed_t_current = " + str(delayed_t_current) + " is in timescale")
-                    
-                # else:
-                    # # print("************************** delayed_t_current = " + str(delayed_t_current) + " is NOT in timescale **************************")
-                    # raise Exception("delayed_t_current = " + str(delayed_t_current) + " is NOT in timescale")
+                t_next = self.sigma(t_current) 
                 
-                # print()
-                
-                # y_sigma_of_t_current = y_current + y_prime(delayed_t_current, y_current) * self.mu(t_current)
-                
-                # t_next = self.sigma(t_current)  
+                #--------------------#
 
-                #--------#
-                
-                y_sigma_of_t_current = y_current + y_prime(t_current, y_current) * self.mu(t_current)
-                
-                t_next = self.sigma(t_current)  
-                
                 print("t_next = self.sigma(t_current) =", t_next)
                 print()                
                 print("Result:")
@@ -1075,17 +1059,18 @@ class timescale:
                     print()                    
                     discretePoint = False
                 
-                past_point = [t_current, [y_current], [y_sigma_of_t_current]]
-                
+                past_point = [t_current, [y_values[t_current]], [y_sigma_of_t_current]]
                 past_points.append(past_point)
                 
+                y_values[t_next] = y_sigma_of_t_current
+                
                 t_current = t_next
-                y_current = y_sigma_of_t_current
+                # y_current = y_sigma_of_t_current
                 
             else:
                 print("Solving right dense point where:")                    
                 print("t_current =", t_current)
-                print("y_current =", y_current)
+                print("y_current = y_values[t_current] =", y_values[t_current])
                 print("t_target =", t_target)
                 print()
                 
@@ -1124,12 +1109,12 @@ class timescale:
                         #---Testing-Code-Start---#
                         
                         t_current = t_target # The following should hold barring accuracy limitations: t_target != JiTCDDE.t
-                        y_current = DDE_integration_result[0]
+                        y_values[t_current] = DDE_integration_result[0]
                         
-                        # print("t_current is:", t_current)
-                        # print("JiTCDDE.t is:", JiTCDDE.t)
-                        # print("y_current is:", y_current)   
-                        # print()
+                        print("t_current =", t_current)
+                        print("JiTCDDE.t =", JiTCDDE.t)                          
+                        print("y_current = y_values[t_current] =", y_values[t_current])
+                        print()
                         
                         #---Testing-Code-End---#
                         
@@ -1163,12 +1148,12 @@ class timescale:
                             # raise Exception("interval_of_t_current[1] != JiTCDDE.t: interval_of_t_current[1] =", interval_of_t_current[1], "| JiTCDDE.t =", JiTCDDE.t)
                         
                         t_current = interval_of_t_current[1] # The following should hold barring accuracy limitations: interval_of_t_current[1] == JiTCDDE.t
-                        y_current = DDE_integration_result[0]
+                        y_values[t_current] = DDE_integration_result[0]
                         
-                        # print("t_current is:", t_current)
-                        # print("JiTCDDE.t is:", JiTCDDE.t)
-                        # print("y_current is:", y_current)
-                        # print()
+                        print("t_current =", t_current)
+                        print("JiTCDDE.t =", JiTCDDE.t)                          
+                        print("y_current = y_values[t_current] =", y_values[t_current])
+                        print()
                         
                         print("Result:")
                         print("time =", t_current, "| DDE_integration_result =", DDE_integration_result)
@@ -1177,6 +1162,25 @@ class timescale:
                         print("[NEXT IS DISCRETE POINT]")
                         print()                        
                         discretePoint = True
+    
+    #
+    #
+    # Validation function that checks whether the value of a delay function (which is passed to this function as an argument) is in the timescale.
+    # If an error is provided, then this function will use the isInTimescaleWithError() function to determine if the value is in the timescale.
+    # If no error is provided, then the isInTimescale() function will be used.
+    # This function is primarily intended to be used when defining a y_prime function to be used with the solve_dde_for_t() function of this class.
+    #
+    #    
+    def delay(self, delay_value, error=None):    
+        if error is None:
+            if not self.isInTimescale(delay_value):
+                raise Exception("The delay value =", delay_value, " was not in the timescale")
+        
+        else:
+            if not self.isInTimescaleWithError(delay_value, error):
+                raise Exception("The delay value =", delay_value, " was not in the timescale with error =", error)
+                
+        return delay_value
     
     #
     #
