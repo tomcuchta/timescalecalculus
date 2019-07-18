@@ -240,11 +240,82 @@ class timescale:
 
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
-        # sumOfIntegratedIntervals = sum([integrate.quad(f, x[0], x[1])[0] for x in intervals])
-        
         sumOfIntegratedIntervals = sum([self.integrate_complex(f, x[0], x[1]) for x in intervals])
 
         return sum([sumOfIntegratedPoints, sumOfIntegratedIntervals])
+
+    #
+    #
+    # Utility function to integrate potentially infinite timescale sections of points and intervals.
+    #
+    #
+    def compute_potentially_infinite_timescale_section(self, f, ts_generator_function, ts_generator_arguments):    
+        # ts_generator_function = ts_values_dictionary["ts_gen"]
+        # ts_generator_arguments = ts_values_dictionary["ts_gen_args"]
+        
+        # print("ts_generator_function =", ts_generator_function)
+        print("ts_generator_arguments =", ts_generator_arguments)
+        print()
+        
+        # The following argument "ts_gen_arg_mpf" has "mpf" on the end because the mpmath package passes "mpf" objects to this function as part of the nsum() function's design.
+        # These objects are converted to floats via the line: ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15)).
+        # This conversion enables us to integrate/solve as usual for the generated points/intervals.
+        def wrapper_function(ts_gen_arg_mpf):
+            ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15))
+            ts_item = ts_generator_function(ts_gen_arg)
+            
+            print("wrapper_function: ts_gen_arg =", ts_gen_arg)
+            print("wrapper_function: ts_generator_arguments =", ts_generator_arguments)
+            
+            if isinstance(ts_item, list):
+                print("wrapper_function: ts_item =", ts_item)
+                print("wrapper_function: integrating over interval")
+                
+                interval_result = self.integrate_complex(f, ts_item[0], ts_item[1])
+                
+                step_after_interval = 0                
+                
+                if ts_generator_arguments[1] > ts_gen_arg:
+                    next_ts_item = ts_generator_function(ts_gen_arg + 1)
+                
+                    if isinstance(next_ts_item, list):
+                        next_ts_item = next_ts_item[0]
+                        
+                    step_after_interval = (next_ts_item - ts_item[1]) * f(ts_item[1])
+                
+                print("interval_result =", interval_result)
+                print("step_after_interval =", step_after_interval)
+                
+                print("*****wrapper_function: RETURNING interval_result + step_after_interval =", interval_result + step_after_interval)
+                print()
+                
+                return interval_result + step_after_interval
+            
+            else:
+                print("wrapper_function: ts_item =", ts_item)
+                print("wrapper_function: calculating discrete value")
+                
+                discrete_result = 0
+                
+                if ts_generator_arguments[1] > ts_gen_arg:
+                    next_ts_item = ts_generator_function(ts_gen_arg + 1)
+                    
+                    if isinstance(next_ts_item, list):
+                        next_ts_item = next_ts_item[0]
+                    
+                    discrete_result = (next_ts_item - ts_item) * f(ts_item)
+                
+                print("*****wrapper_function: RETURNING discrete result value =", discrete_result)
+                print()
+                
+                return discrete_result
+        
+        result = mpmath.nsum(wrapper_function, ts_generator_arguments)
+        
+        print("----RESULT----")
+        print()
+        
+        return result
 
     #
     #
@@ -257,9 +328,6 @@ class timescale:
             
         def imaginary_component(t):
             return np.imag(f(t))
-        
-        # real_result = integrate.quad(real_component, s, t, **kwargs)[0]        
-        # imaginary_result = integrate.quad(imaginary_component, s, t, **kwargs)[0]
         
         real_result = float(mpmath.nstr(mpmath.quad(real_component, [s, t], **kwargs), n=15))        
         imaginary_result = float(mpmath.nstr(mpmath.quad(imaginary_component, [s, t], **kwargs), n=15))        
