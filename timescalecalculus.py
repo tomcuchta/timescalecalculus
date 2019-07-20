@@ -512,20 +512,20 @@ class timescale:
         if isinstance(ts_item, list):
             if isinstance(next_ts_item, list):
                 if ts_item[1] >= next_ts_item[0]:
-                    raise Exception("ts_item[1] >= next_ts_item[0] where: ts_item[1] =", ts_item[1], "and next_ts_item[0] =", next_ts_item[0])
+                    raise Exception("ts_item[1] >= next_ts_item[0] where: ts_item[1] = " + str(ts_item[1]) + " and next_ts_item[0] = " + str(next_ts_item[0]))
             
             else:
                 if ts_item[1] >= next_ts_item:
-                    raise Exception("ts_item[1] >= next_ts_item where: ts_item[1] =", ts_item[1], "and next_ts_item =", next_ts_item)
+                    raise Exception("ts_item[1] >= next_ts_item where: ts_item[1] = " + str(ts_item[1]) + " and next_ts_item = " + str(next_ts_item))
         
         else:
             if isinstance(next_ts_item, list):
                 if ts_item >= next_ts_item[0]:
-                    raise Exception("ts_item >= next_ts_item[0] where: ts_item =", ts_item, "and next_ts_item[0] =", next_ts_item[0])
+                    raise Exception("ts_item >= next_ts_item[0] where: ts_item = " + str(ts_item) + " and next_ts_item[0] = " + str(next_ts_item[0]))
             
             else:
                 if ts_item >= next_ts_item:
-                    raise Exception("ts_item >= next_ts_item where: ts_item =", ts_item, "and next_ts_item =", next_ts_item)
+                    raise Exception("ts_item >= next_ts_item where: ts_item = " + str(ts_item) + " and next_ts_item = " + str(next_ts_item))
 
     #
     #
