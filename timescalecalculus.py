@@ -320,7 +320,13 @@ class timescale:
     #   t_target: The timescale value for which to solve.
     #
     #   ts_generator_function: The function that, when it is fed values where, for any value n, ts_generator_arguments[0] <= n <= ts_generator_arguments[1] is True AND (n_(m+1) - n_m) = 1.
-    #                          In other words: the difference between two consecutive n-values is 1.
+    #                          In other words: the difference between two consecutive n-values is always 1.
+    #
+    #   ts_generator_arguments: A list of two numbers of the form [start, end] where start is the first value fed to the ts_generator_function and end is the last value fed to that same function.
+    #                           As mentioned before, the different between any two consecutive numbers between start and end is always 1 -- this is purely a method for generating the timescale.
+    #                           As an example: if ts_generator_arguments = [1, 4], then ts_generator_function will be fed the following values in the listed order: 1, 2, 3, 4.
+    #                           That ts_generator_function will then return, for each value fed to it, a particular timescale section. 
+    #                           compute_potentially_infinite_timescale_section_for_t() will then solve over these sections.
     #
     #   signif_count: How many previously calcuated values (that are obtained from solving integrals or discrete points) to check the "significance" of -- see "signif_threshold" for more information.
     #
