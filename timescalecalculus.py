@@ -250,34 +250,31 @@ class timescale:
     #
     #
     def compute_potentially_infinite_timescale_section(self, f, ts_generator_function, ts_generator_arguments):    
-        # ts_generator_function = ts_values_dictionary["ts_gen"]
-        # ts_generator_arguments = ts_values_dictionary["ts_gen_args"]
-        
-        # print("ts_generator_function =", ts_generator_function)
         print("ts_generator_arguments =", ts_generator_arguments)
         print()
-        
+                
         # The following argument "ts_gen_arg_mpf" has "mpf" on the end because the mpmath package passes "mpf" objects to this function as part of the nsum() function's design.
         # These objects are converted to floats via the line: ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15)).
         # This conversion enables us to integrate/solve as usual for the generated points/intervals.
         def wrapper_function(ts_gen_arg_mpf):
             ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15))
             ts_item = ts_generator_function(ts_gen_arg)
-            
+            next_ts_item = ts_generator_function(ts_gen_arg + 1)
+            self.validate_generated_timescale_value_pair(ts_item, next_ts_item)
+                       
             print("wrapper_function: ts_gen_arg =", ts_gen_arg)
             print("wrapper_function: ts_generator_arguments =", ts_generator_arguments)
+            print("wrapper_function: ts_item =", ts_item)
+            print("wrapper_function: next_ts_item =", next_ts_item)
             
             if isinstance(ts_item, list):
-                print("wrapper_function: ts_item =", ts_item)
                 print("wrapper_function: integrating over interval")
                 
                 interval_result = self.integrate_complex(f, ts_item[0], ts_item[1])
                 
                 step_after_interval = 0                
                 
-                if ts_generator_arguments[1] > ts_gen_arg:
-                    next_ts_item = ts_generator_function(ts_gen_arg + 1)
-                
+                if ts_generator_arguments[1] > ts_gen_arg:                
                     if isinstance(next_ts_item, list):
                         next_ts_item = next_ts_item[0]
                         
@@ -292,14 +289,11 @@ class timescale:
                 return interval_result + step_after_interval
             
             else:
-                print("wrapper_function: ts_item =", ts_item)
                 print("wrapper_function: calculating discrete value")
                 
                 discrete_result = 0
                 
-                if ts_generator_arguments[1] > ts_gen_arg:
-                    next_ts_item = ts_generator_function(ts_gen_arg + 1)
-                    
+                if ts_generator_arguments[1] > ts_gen_arg:                    
                     if isinstance(next_ts_item, list):
                         next_ts_item = next_ts_item[0]
                     
@@ -316,6 +310,256 @@ class timescale:
         print()
         
         return result
+
+    #
+    #
+    # Utility function to integrate a generated timescale section of points and intervals for t. 
+    # Arguments:
+    #   f: The function with which to solve the timescale for a particular target value = t.
+    #
+    #   t_target: The timescale value for which to solve.
+    #
+    #   ts_generator_function: The function that, when it is fed values where, for any value n, ts_generator_arguments[0] <= n <= ts_generator_arguments[1] is True AND (n_(m+1) - n_m) = 1.
+    #                          In other words: the difference between two consecutive n-values is always 1.
+    #
+    #   ts_generator_arguments: A list of two numbers of the form [start, end] where start is the first value fed to the ts_generator_function and end is the last value fed to that same function.
+    #                           As mentioned before, the different between any two consecutive numbers between start and end is always 1 -- this is purely a method for generating the timescale.
+    #                           As an example: if ts_generator_arguments = [1, 4], then ts_generator_function will be fed the following values in the listed order: 1, 2, 3, 4.
+    #                           That ts_generator_function will then return, for each value fed to it, a particular timescale section. 
+    #                           compute_potentially_infinite_timescale_section_for_t() will then solve over these sections.
+    #
+    #   signif_count: How many previously calcuated values (that are obtained from solving integrals or discrete points) to check the "significance" of -- see "signif_threshold" for more information.
+    #
+    #   signif_threshold: The value that a particular calculated value (from solving an integral or discrete point) must be below to be considered "insignificant".
+    #                     If m=signif_count previously calculated values are all below this signif_threshold, then the compute_potentially_infinite_timescale_section_for_t() function will
+    #                     return the current result sum with a warning message.
+    #
+    #
+    def compute_potentially_infinite_timescale_section_for_t(self, f, t_target, ts_generator_function, ts_generator_arguments, signif_count = 10, signif_threshold = 0.0000001):    
+        print("ts_generator_arguments =", ts_generator_arguments)
+        print()
+                
+        # The following argument "ts_gen_arg_mpf" has "mpf" on the end because the mpmath package passes "mpf" objects to this function as part of the nsum() function's design.
+        # These objects are converted to floats via the line: ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15)).
+        # This conversion enables us to integrate/solve as usual for the generated points/intervals.
+        def wrapper_function(ts_gen_arg_mpf):
+            ts_gen_arg = float(mpmath.nstr(ts_gen_arg_mpf, n=15))
+            ts_item = ts_generator_function(ts_gen_arg)
+            next_ts_item = ts_generator_function(ts_gen_arg + 1)
+            self.validate_generated_timescale_value_pair(ts_item, next_ts_item)
+                       
+            print("wrapper_function: ts_gen_arg =", ts_gen_arg)
+            print("wrapper_function: ts_generator_arguments =", ts_generator_arguments)
+            print("wrapper_function: t_target =", t_target)
+            print("wrapper_function: ts_item =", ts_item)
+            print("wrapper_function: next_ts_item =", next_ts_item)
+                       
+            if isinstance(ts_item, list):
+                print("wrapper_function: integrating over interval")
+                
+                if ts_item[0] > t_target:
+                    raise Exception("ts_item[0] = " + str(ts_item[0]) + " was greater than t_target = " + str(t_target) + " -- the timescale does not contain t_target")
+                
+                if t_target > ts_item[1]:
+                    interval_result = self.integrate_complex(f, ts_item[0], ts_item[1])
+                
+                else:
+                    interval_result = self.integrate_complex(f, ts_item[0], t_target)
+
+                    print("*****wrapper_function: t_target <= ts_item[1] -> RETURNING interval_result =", interval_result)
+                    
+                    return {"result" : interval_result, "found_t_target" : True}
+                
+                step_after_interval = 0                
+                
+                if ts_generator_arguments[1] > ts_gen_arg:                
+                    if isinstance(next_ts_item, list):
+                        next_ts_item = next_ts_item[0]
+                        
+                    step_after_interval = (next_ts_item - ts_item[1]) * f(ts_item[1])
+                
+                print("interval_result =", interval_result)
+                print("step_after_interval =", step_after_interval)
+                
+                print("*****wrapper_function: RETURNING interval_result + step_after_interval =", interval_result + step_after_interval)
+                print()
+                
+                if t_target == next_ts_item:
+                    return {"result" : interval_result + step_after_interval, "found_t_target" : True}
+                    
+                else:
+                    return {"result" : interval_result + step_after_interval, "found_t_target" : False}
+            
+            else:
+                print("wrapper_function: calculating discrete value")
+                
+                if ts_item > t_target:
+                    raise Exception("ts_item = " + str(ts_item) + " was greater than t_target = " + str(t_target) + " -- the timescale does not contain t_target")
+                
+                discrete_result = 0
+                
+                if ts_generator_arguments[1] > ts_gen_arg:                    
+                    if isinstance(next_ts_item, list):
+                        next_ts_item = next_ts_item[0]
+                    
+                    discrete_result = (next_ts_item - ts_item) * f(ts_item)
+                
+                print("*****wrapper_function: RETURNING discrete result value =", discrete_result)
+                print()
+                
+                if t_target == ts_item:
+                    return {"result" : discrete_result, "found_t_target" : True}
+                    
+                else:
+                    return {"result" : discrete_result, "found_t_target" : False}
+        
+        result = self.special_sum_function(wrapper_function, ts_generator_arguments, prior_results_significance_count = signif_count, significance_limit = signif_threshold)
+        
+        print("----RESULT----")
+        print()
+        
+        return result
+
+    #
+    #
+    # This function is used by the compute_potentially_infinite_timescale_section_for_t() function of this class.
+    # It is responsible for summing the results obtained from solving discrete points and intervals in a generated timescale.
+    # It is a "special" function because, in addition to summing, it also checks -- via the insignificant_prior_results() function -- the values of the previous n=prior_results_significance_count calculated values.
+    # Calculated values that are below the significance_limit are considered "insignificant" -- if all n previously
+    # calculated values are "insignificant", the special_sum_function() return the current result along with a warning message.
+    # The reasoning behind having a significance_limit is so that an overflow is less likely to occur -- if result values are allowed to indefinitely become smaller, then it is likely that the precision limit on the float
+    # data type is reached which results in an overflow error.
+    #
+    #
+    def special_sum_function(self, function, ts_generator_arguments, prior_results_significance_count = 10, significance_limit = 0.0000001):
+        result = 0.0
+        iteration = 0
+        ts_generator_arg = ts_generator_arguments[0]
+        iterations_limit = ts_generator_arguments[1] - ts_generator_arguments[0]
+
+        print("iterations_limit =", iterations_limit)
+        print("prior_results_significance_count =", prior_results_significance_count)
+        print("significance_limit =", significance_limit)
+
+        prior_results = []
+                
+        i = 0
+        
+        while i < prior_results_significance_count:
+            prior_results.append(0.0)
+            i = i + 1
+
+        while iteration < iterations_limit:
+            print()
+            print("iteration =", iteration)
+            print("ts_generator_arg =", ts_generator_arg)
+            
+            dictionary_result = function(ts_generator_arg)
+            
+            prior_results[iteration % prior_results_significance_count] = dictionary_result["result"]
+            result = result + dictionary_result["result"]
+            
+            if dictionary_result["found_t_target"] is True:
+                print("special_sum_function: found_t_target -> returning result")
+                break
+            
+            if iteration >= prior_results_significance_count:
+                print("special_sum_function: checking significance of the last " + str(prior_results_significance_count) + " results:")
+                if self.insignificant_prior_results(prior_results, prior_results_significance_count, significance_limit) is True:
+                    print("special_sum_function: ***WARNING***: Insignificant results detected: returning result before t_target was found")                    
+                    break
+            
+            iteration = iteration + 1
+            ts_generator_arg = ts_generator_arg + 1
+        
+        return result
+
+    #
+    #
+    # Utility function for the special sum function -- it checks the last n=prior_results_significance_count prior_results to see if they are below the significance_limit.
+    # If all n prior_results are below that limit, this function will return True.
+    # Else it will return False.
+    #
+    # NOTE: The conditions for when values are considered insignificant/significant could be expanded upon.
+    #
+    #
+    def insignificant_prior_results(self, prior_results, prior_results_significance_count, significance_limit):
+        i = 0
+        
+        insignificant = True
+        
+        while i < prior_results_significance_count:
+            print("prior_results[" + str(i) + "] =", prior_results[i])
+            if prior_results[i] > significance_limit:
+                insignificant = False
+                
+            i = i + 1
+        
+        if insignificant:
+            return True
+        
+        else:
+            return False
+
+    #
+    #
+    # Utility function to check if a pair of generated timescale values are valid.
+    # "Valid" in this case means that, for any ts_item, the condition (next_ts_item > ts_item) holds.
+    # This should be true regardless of whether ts_item or next_ts_item are intervals or discrete points.
+    #
+    #
+    def validate_generated_timescale_value_pair(self, ts_item, next_ts_item):
+        if isinstance(ts_item, list):
+            if isinstance(next_ts_item, list):
+                if ts_item[1] >= next_ts_item[0]:
+                    raise Exception("ts_item[1] >= next_ts_item[0] where: ts_item[1] = " + str(ts_item[1]) + " and next_ts_item[0] = " + str(next_ts_item[0]))
+            
+            else:
+                if ts_item[1] >= next_ts_item:
+                    raise Exception("ts_item[1] >= next_ts_item where: ts_item[1] = " + str(ts_item[1]) + " and next_ts_item = " + str(next_ts_item))
+        
+        else:
+            if isinstance(next_ts_item, list):
+                if ts_item >= next_ts_item[0]:
+                    raise Exception("ts_item >= next_ts_item[0] where: ts_item = " + str(ts_item) + " and next_ts_item[0] = " + str(next_ts_item[0]))
+            
+            else:
+                if ts_item >= next_ts_item:
+                    raise Exception("ts_item >= next_ts_item where: ts_item = " + str(ts_item) + " and next_ts_item = " + str(next_ts_item))
+
+    #
+    #
+    # Utility function to get n values of a generated timescale.
+    #
+    #
+    def get_n_ts_gen_values(self, ts_gen_function, n):
+        i = 0
+
+        generated_timescale = []
+
+        while i < n:
+            generated_timescale.append(ts_gen_function(i))
+            i = i + 1
+
+        return generated_timescale
+
+    #
+    #
+    # Utility function to print n values of a generated timescale.
+    #
+    #
+    def print_n_ts_gen_values(self, ts_gen_function, n):
+        i = 0
+
+        generated_timescale = []
+
+        while i < n:
+            generated_timescale.append(ts_gen_function(i))
+            i = i + 1
+
+        print("Generated timescale:")
+        print(generated_timescale)
+        print()
 
     #
     #
