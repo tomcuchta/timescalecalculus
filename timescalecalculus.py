@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import symengine
 import jitcdde
 import mpmath
-# import inspect
 
 #
 #
@@ -139,7 +138,7 @@ class timescale:
     # graininess
     #
     #
-    def mu(self,t):
+    def mu(self,t):    
         for x in self.ts:
             if isinstance(x, list) and t >= x[0] and t < x[1]:
                 return 0
@@ -211,7 +210,7 @@ class timescale:
             raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
 
         # Validation code ends
-
+        
         points = []
         intervals = []
 
@@ -748,8 +747,8 @@ class timescale:
         def imaginary_component(t):
             return np.imag(f(t))
         
-        real_result = float(mpmath.nstr(mpmath.quad(real_component, [s, t], **kwargs), n=15))        
-        imaginary_result = float(mpmath.nstr(mpmath.quad(imaginary_component, [s, t], **kwargs), n=15))        
+        real_result = float(mpmath.nstr(mpmath.quad(real_component, [s, t], **kwargs), n=15))
+        imaginary_result = float(mpmath.nstr(mpmath.quad(imaginary_component, [s, t], **kwargs), n=15))
         
         if imaginary_result == 0:
             return real_result
@@ -830,7 +829,7 @@ class timescale:
     # Delta exponential based on definition 2.30
     #
     #
-    def dexp_p(self, p, t, s):        
+    def dexp_p(self, p, t, s):
         def f(t):
             return self.cyl(t, p(t))
                
@@ -1421,10 +1420,10 @@ class timescale:
     
     #
     #
-    # Delay Differential Equation Solver (currently unfinished)
+    # Delay Differential Equation Solver
     #
     #
-    def solve_dde_for_t(self, y_values, t_0, t_target, y_prime, JiTCDDE=None, stepSize=0.01):
+    def solve_dde_for_t(self, y_values, t_0, t_target, y_prime, JiTCDDE=None, stepSize=0.01, return_all_results=False):
         print("solve_dde_for_t arguments:")
         print("y_0 = y_values[t_0] =", y_values[t_0])
         print("t_0 =", t_0)  
@@ -1507,22 +1506,10 @@ class timescale:
                 print("self.mu(t_current) =", self.mu(t_current))
                 print()            
                 
-                #--------#
-                
-                # y_sigma_of_t_current = y_current + y_prime(t_current, y_current) * self.mu(t_current)
-                
-                # t_next = self.sigma(t_current)       
-                
-                #--------#
-                
-                #--------------------#
-                
                 y_sigma_of_t_current = y_values[t_current] + y_prime(t_current, y_values) * self.mu(t_current)
                 
                 t_next = self.sigma(t_current) 
                 
-                #--------------------#
-
                 print("t_next = self.sigma(t_current) =", t_next)
                 print()                
                 print("Result:")
@@ -1533,8 +1520,12 @@ class timescale:
                                 
                 if t_target == t_next:
                     print("t_target == t_next -> returning y_sigma_of_t_current\n")
-                    # return y_sigma_of_t_current
-                    return all_results
+                    
+                    if return_all_results:
+                        return all_results
+                    
+                    else:
+                        return y_sigma_of_t_current
                 
                 if self.isDiscretePoint(t_next):
                     discretePoint = True
@@ -1552,7 +1543,6 @@ class timescale:
                 y_values[t_next] = y_sigma_of_t_current
                 
                 t_current = t_next
-                # y_current = y_sigma_of_t_current
                 
             else:
                 print("Solving right dense point where:")                    
@@ -1589,10 +1579,7 @@ class timescale:
                                 DDE_integration_result = JiTCDDE.integrate_blindly(time)
                                 all_results.append(DDE_integration_result[0])
                                 print("time =", time, " |  integration_result =", DDE_integration_result)
-                        
-                        # if t_target != JiTCDDE.t:
-                            # raise Exception("t_target != JiTCDDE.t: t_target =", t_target, "| JiTCDDE.t =", JiTCDDE.t)
-                        
+                                                
                         #---Testing-Code-Start---#
                         
                         t_current = t_target # The following should hold barring accuracy limitations: t_target != JiTCDDE.t
@@ -1609,8 +1596,11 @@ class timescale:
                         print("time =", t_current, "| DDE_integration_result =", DDE_integration_result)
                         print()
                         
-                        # return DDE_integration_result[len(DDE_integration_result) - 1]
-                        return all_results
+                        if return_all_results:
+                            return all_results
+                        
+                        else:
+                            return DDE_integration_result[len(DDE_integration_result) - 1]                        
                     
                     elif t_target > interval_of_t_current[1]:
                         print("Integrating to t =", interval_of_t_current[1])
@@ -1630,10 +1620,7 @@ class timescale:
                                 DDE_integration_result = JiTCDDE.integrate_blindly(time)
                                 all_results.append(DDE_integration_result[0])
                                 print("time =", time, " |  integration_result =", DDE_integration_result)
-                        
-                        # if interval_of_t_current[1] != JiTCDDE.t:
-                            # raise Exception("interval_of_t_current[1] != JiTCDDE.t: interval_of_t_current[1] =", interval_of_t_current[1], "| JiTCDDE.t =", JiTCDDE.t)
-                        
+                                                
                         t_current = interval_of_t_current[1] # The following should hold barring accuracy limitations: interval_of_t_current[1] == JiTCDDE.t
                         y_values[t_current] = DDE_integration_result[0]
                         
@@ -1791,7 +1778,7 @@ class timescale:
             if isinstance(x, list) and t <= x[1] and t >= x[0]:
                 return x
         
-        raise Exception("getCorrespondingInterval(): t not in an interval!") 
+        raise Exception("getCorrespondingInterval(): t not in an interval!")
     
     #
     #
