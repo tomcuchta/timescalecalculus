@@ -178,7 +178,7 @@ class timescale:
     # delta integral
     #
     #
-    def dintegral(self,f,t,s):
+    def dintegral(self, f, t, s, throwExceptions = True):
         # The following code checks that t and s are elements of the timescale
 
         tIsAnElement = False
@@ -200,14 +200,27 @@ class timescale:
             if tIsAnElement and sIsAnElement:
                 break
 
+        errorOccurred = False
+        message = ""
+
         if not tIsAnElement and not sIsAnElement:
-            raise Exception("The bounds of the dintegral function, t and s, are not elements of the timescale.")
+            message = "The bounds of the dintegral function, t = " + str(t) + " and s = " + str(s) + ", are not elements of the timescale."
+            errorOccurred = True
 
         elif not tIsAnElement:
-            raise Exception("The upper bound of dintegral function, t, is not an element of timescale.")
+            message = "The upper bound of dintegral function, t = " + str(t) + ", is not an element of timescale."
+            errorOccurred = True
 
         elif not sIsAnElement:
-            raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
+            message = "The lower bound of dintegral function, s = " + str(s) + ", is not an element of timescale."
+            errorOccurred = True
+
+        if errorOccurred:
+            if throwExceptions:
+                raise Exception(message)
+            
+            else:
+                print("Warning: " + message)
 
         # Validation code ends
         
@@ -239,7 +252,7 @@ class timescale:
                 intervals.append([x[0], t])
 
         # print(points)
-        print(intervals)
+        # print(intervals)
 
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
@@ -778,7 +791,7 @@ class timescale:
                 def g(x):
                    return self.g_k(k - 1, self.sigma(x), s)
 
-                integralResult = self.dintegral(g, t, s)
+                integralResult = self.dintegral(g, t, s, throwExceptions = False)
 
                 self.memo_g_k[currentKey] = integralResult
 
@@ -808,7 +821,7 @@ class timescale:
                 
                 # print("h_k: t =", t)
                 
-                integralResult = self.dintegral(h, t, s)
+                integralResult = self.dintegral(h, t, s, throwExceptions = False)
 
                 self.memo_h_k[currentKey] = integralResult
 
@@ -1377,29 +1390,29 @@ class timescale:
                 else:
                     interval_of_t_current = self.getCorrespondingInterval(t_current)
                     
-                    print("Integration conditions:")
-                    print("t_current =", t_current)
-                    print("interval_of_t_current =", interval_of_t_current)
+                    # print("Integration conditions:")
+                    # print("t_current =", t_current)
+                    # print("interval_of_t_current =", interval_of_t_current)
                     
                     if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
-                        print("Integrating to t =", t_target)
-                        print()                                             
+                        # print("Integrating to t =", t_target)
+                        # print()                                             
                         
                         # stepSize = 0.1
-                        print("stepSize =", stepSize)
+                        # print("stepSize =", stepSize)
                         
                         current_interval = np.arange(t_current, t_target + stepSize, stepSize)
                         # current_interval = np.arange(t_current, t_target, stepSize)
                         # current_interval = np.linspace(t_current, t_target, 500)
                         
-                        print(current_interval)
-                        print()
+                        # print(current_interval)
+                        # print()
                         
                         ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)
                         
-                        print("Result:")
-                        print("ODE_integration_result =", ODE_integration_result)
-                        print()
+                        # print("Result:")
+                        # print("ODE_integration_result =", ODE_integration_result)
+                        # print()
                         
                         ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
                         
