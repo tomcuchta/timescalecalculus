@@ -238,6 +238,9 @@ class timescale:
             elif isinstance(x, list) and (s < x[0]) and (t >= x[0] and t < x[1]):
                 intervals.append([x[0], t])
 
+        # print(points)
+        print(intervals)
+
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
         sumOfIntegratedIntervals = sum([self.integrate_complex(f, x[0], x[1]) for x in intervals])
@@ -802,7 +805,9 @@ class timescale:
             else:
                 def h(x):
                     return self.h_k(k - 1, x, s)
-
+                
+                # print("h_k: t =", t)
+                
                 integralResult = self.dintegral(h, t, s)
 
                 self.memo_h_k[currentKey] = integralResult
@@ -1372,24 +1377,29 @@ class timescale:
                 else:
                     interval_of_t_current = self.getCorrespondingInterval(t_current)
                     
-                    # print("Integration conditions:")
-                    # print("t_current =", t_current)
-                    # print("interval_of_t_current =", interval_of_t_current)
+                    print("Integration conditions:")
+                    print("t_current =", t_current)
+                    print("interval_of_t_current =", interval_of_t_current)
                     
                     if t_target <= interval_of_t_current[1] and t_target >= interval_of_t_current[0]:
-                        # print("Integrating to t =", t_target)
-                        # print()                                             
+                        print("Integrating to t =", t_target)
+                        print()                                             
+                        
+                        # stepSize = 0.1
+                        print("stepSize =", stepSize)
                         
                         current_interval = np.arange(t_current, t_target + stepSize, stepSize)
+                        # current_interval = np.arange(t_current, t_target, stepSize)
+                        # current_interval = np.linspace(t_current, t_target, 500)
                         
-                        # print(current_interval)
-                        # print()
+                        print(current_interval)
+                        print()
                         
                         ODE_integration_result = integrate.odeint(y_prime, y_current, current_interval)
                         
-                        # print("Result:")
-                        # print("ODE_integration_result =", ODE_integration_result)
-                        # print()
+                        print("Result:")
+                        print("ODE_integration_result =", ODE_integration_result)
+                        print()
                         
                         ODE_integration_result = ODE_integration_result[len(ODE_integration_result) - 1]
                         
