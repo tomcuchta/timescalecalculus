@@ -178,7 +178,7 @@ class timescale:
     # delta integral
     #
     #
-    def dintegral(self,f,t,s):
+    def dintegral(self, f, t, s, throwExceptions = True):
         # The following code checks that t and s are elements of the timescale
 
         tIsAnElement = False
@@ -200,14 +200,27 @@ class timescale:
             if tIsAnElement and sIsAnElement:
                 break
 
+        errorOccurred = False
+        message = ""
+
         if not tIsAnElement and not sIsAnElement:
-            raise Exception("The bounds of the dintegral function, t and s, are not elements of the timescale.")
+            message = "The bounds of the dintegral function, t = " + str(t) + " and s = " + str(s) + ", are not elements of the timescale."
+            errorOccurred = True
 
         elif not tIsAnElement:
-            raise Exception("The upper bound of dintegral function, t, is not an element of timescale.")
+            message = "The upper bound of dintegral function, t = " + str(t) + ", is not an element of timescale."
+            errorOccurred = True
 
         elif not sIsAnElement:
-            raise Exception("The lower bound of dintegral function, s, is not an element of timescale.")
+            message = "The lower bound of dintegral function, s = " + str(s) + ", is not an element of timescale."
+            errorOccurred = True
+
+        if errorOccurred:
+            if throwExceptions:
+                raise Exception(message)
+            
+            else:
+                print("Warning: " + message)
 
         # Validation code ends
         
@@ -237,6 +250,9 @@ class timescale:
 
             elif isinstance(x, list) and (s < x[0]) and (t >= x[0] and t < x[1]):
                 intervals.append([x[0], t])
+
+        # print(points)
+        # print(intervals)
 
         sumOfIntegratedPoints = sum([self.mu(x)*f(x) for x in points])
 
@@ -775,7 +791,7 @@ class timescale:
                 def g(x):
                    return self.g_k(k - 1, self.sigma(x), s)
 
-                integralResult = self.dintegral(g, t, s)
+                integralResult = self.dintegral(g, t, s, throwExceptions = False)
 
                 self.memo_g_k[currentKey] = integralResult
 
@@ -802,8 +818,10 @@ class timescale:
             else:
                 def h(x):
                     return self.h_k(k - 1, x, s)
-
-                integralResult = self.dintegral(h, t, s)
+                
+                # print("h_k: t =", t)
+                
+                integralResult = self.dintegral(h, t, s, throwExceptions = False)
 
                 self.memo_h_k[currentKey] = integralResult
 
@@ -1380,7 +1398,12 @@ class timescale:
                         # print("Integrating to t =", t_target)
                         # print()                                             
                         
+                        # stepSize = 0.1
+                        # print("stepSize =", stepSize)
+                        
                         current_interval = np.arange(t_current, t_target + stepSize, stepSize)
+                        # current_interval = np.arange(t_current, t_target, stepSize)
+                        # current_interval = np.linspace(t_current, t_target, 500)
                         
                         # print(current_interval)
                         # print()
