@@ -18,6 +18,7 @@ Pull requests are welcome! Please feel free to contribute to this code.
 
 ## Known usage in the literature
 ``D. Grow, N. Wintz. Bilinear state systems on an unbounded time scale. Appl. Math. Comput. To appear, 2021.``
+
 ``F. Ayça Çetinkaya, Tom Cuchta. Sturm-Liouville and Riccati Conformable Dynamic Equations. Adv. Dyn. Syst. Appl., 15(1):1–13, 2020.``
 
 Please notify Tom Cuchta if you would like your paper listed here as using this software.
