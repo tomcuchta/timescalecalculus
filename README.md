@@ -1,17 +1,23 @@
-#Timescalecalculus
-timescalecalculus is a package for doing [calculus on time scales](https://en.wikipedia.org/wiki/Time-scale_calculus)
+# timescalecalculus
+`timescalecalculus` is a package for doing [calculus on time scales](https://en.wikipedia.org/wiki/Time-scale_calculus)
 
-##Usage
-Place the timescalecalculus.py file into the folder with your current working script and import the package using
-```python
-import timescalecalculus as tsc```
+## Usage
+Place the `timescalecalculus.py` file into the folder with your current working script and import the package using
 
-Time scales are objects in this package, and each time scale object comes with methods for the forward jump, graininess, delta derivative, delta integral, and so on. Methods to solve dynamic equations on time scales are included.
+    import timescalecalculus as tsc 
 
-##Documentation
-Currently, the documentation is **severely** out of date due to rapid development of the package over summer 2019. Documentation will always be at [this page](http://timescalewiki.org/index.php/Timescalecalculus_python_library_documentation).
+Time scales are objects in this package, and each time scale object comes with methods for the forward jump, graininess, delta derivative, delta integral, and so on. Methods to solve systems of dynamic equations on time scales are included.
+
+## Documentation
+Currently, the documentation is **severely** out of date due to rapid development of the package over Summer 2019. Documentation will always be at [this page](http://timescalewiki.org/index.php/Timescalecalculus_python_library_documentation).
 
 In the meantime, please feel free to e-mail Tom Cuchta (```tomcuchta@gmail.com```) for assistance in using the package.
 
-##Contributing
+## Contributing
 Pull requests are welcome! Please feel free to contribute to this code.
+
+## Known usage in the literature
+D. Grow, N. Wintz. Bilinear state systems on an unbounded time scale. Appl. Math. Comput. To appear, 2021.
+F. Ayça Çetinkaya, Tom Cuchta. Sturm-Liouville and Riccati Conformable Dynamic Equations. Adv. Dyn. Syst. Appl., 15(1):1–13, 2020.
+
+Please notify Tom Cuchta if you would like your paper listed here as using this software.
