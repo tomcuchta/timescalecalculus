@@ -17,6 +17,8 @@ In the meantime, please feel free to e-mail Tom Cuchta (```tomcuchta@gmail.com``
 Pull requests are welcome! Please feel free to contribute to this code.
 
 ## Known usage in the literature
+``Umit Aksoy, Tom Cuchta, Svetlin Georgiev, and Yeliz Okur. A normal distribution on time scales with application. Filomat. In press 2022.``
+
 ``David Grow and Nick Wintz. Bilinear state systems on an unbounded time scale. Appl. Math. Comput., 397:Paper No. 125917, 14, 2021.``
 
 ``F. Ayça Çetinkaya, Tom Cuchta. Sturm-Liouville and Riccati Conformable Dynamic Equations. Adv. Dyn. Syst. Appl., 15(1):1–13, 2020.``
