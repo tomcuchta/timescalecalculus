@@ -849,7 +849,12 @@ class timescale:
     #
     def dexp_p(self, p, t, s):
         def f(t):
-            return self.cyl(t, p(t))
+            if(t>s):
+                return self.cyl(t, p(t))
+            elif(t==s):
+                return 1.0
+            else:
+                return self.dexp_p(p, s, t)
                
         return np.exp(self.dintegral(f, t, s))
 
