@@ -5,14 +5,14 @@ import numpy as np
 #
 # define the time scale
 #
-ts=tsc.timescale([0, 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.5, 4])#2.2, 2.3,#2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.5, 4.0])
+ts=tsc.integers(0,15)
 #
 # define boundary values
 #
 initialtvalue = 0
-finaltvalue = 4
-initialoutputvalue = 250
-finaloutputvalue = 250
+finaltvalue = 15
+initialoutputvalue = 10
+finaloutputvalue = -10
 #
 # choose an initial value of alpha
 #
@@ -25,9 +25,9 @@ def kappa0(t,alpha):
 def kappa1(t,alpha):
     return 1-alpha
 def q(t):
-    return t
+    return 1/(t+1)
 def p(t):
-    return 1+(t/10000)
+    return -7/(t+5)
 def f(t):
     return 0
 #
