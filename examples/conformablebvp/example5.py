@@ -5,14 +5,14 @@ import numpy as np
 #
 # define the time scale
 #
-ts=tsc.integers(0,15)
+ts=tsc.timescale([0,1,2,3,3.5,4,4.5,5,5.5,6,6.5,7,8,9,10,12,14,14.5,15,15.5,16,16.5,17,19,21,23,23.5,24,24.5,25,25.5,26,28,29,29.5,29.6,30])
 #
 # define boundary values
 #
 initialtvalue = 0
-finaltvalue = 15
-initialoutputvalue = 10
-finaloutputvalue = -10
+finaltvalue = 30
+initialoutputvalue = 0
+finaloutputvalue = 1
 #
 # choose an initial value of alpha
 #
@@ -77,21 +77,21 @@ plt.plot(ts.ts,[soln(t) for t in ts.ts],color='black',alpha=0.2)
 #
 # plot again with a different alpha
 #
-alpha=0.85
+alpha=0.86
 initvalue=so.broyden1(minimizethis,initialoutputvalue)
 ts.plot(soln,color='orange',label=r'$\alpha=$'+str(alpha),zorder=2)
 plt.plot(ts.ts,[soln(t) for t in ts.ts],color='orange',alpha=0.2)
 #
 # plot again with a different alpha
 #
-alpha=0.65
+alpha=0.35
 initvalue=so.broyden1(minimizethis,initialoutputvalue)
 ts.plot(soln,color='blue',label=r'$\alpha=$'+str(alpha),zorder=2)
 plt.plot(ts.ts,[soln(t) for t in ts.ts],color='blue',alpha=0.2)
 #
 # plot again with a different alpha
 #
-alpha=0.39
+alpha=0.1
 initvalue=so.broyden1(minimizethis,initialoutputvalue)
 ts.plot(soln,color='red',label=r'$\alpha=$'+str(alpha),zorder=2)
 plt.plot(ts.ts,[soln(t) for t in ts.ts],color='red',alpha=0.2)
