@@ -17,27 +17,19 @@ finaloutputvalue = 250
 # choose an initial value of alpha
 #
 alpha=1.0
-
 #
 # define the functions needed for expressing the problem
 #
 def kappa0(t,alpha):
     return alpha
-
 def kappa1(t,alpha):
     return 1-alpha
-
 def q(t):
     return 5.00156
-
 def p(t):
     return -t
-#    return 1/(1+t)
-
 def f(t):
     return 373.117
-
-
 #
 # coefficient of x^Del=x2
 #
@@ -48,7 +40,6 @@ def A(t):
 #
 def B(t):
     return (p(t)*kappa1(t,alpha)*kappa1(t,alpha)+kappa0(t,alpha)*kappa1(t,alpha)*ts.dderivative(lambda x: p(x),t)+q(t))/(kappa0(t,alpha)*p(ts.sigma(t)))
-
 #
 # set up the system
 #
@@ -83,7 +74,6 @@ def soln(t):
 plt.scatter([initialtvalue,finaltvalue],[initialoutputvalue,finaloutputvalue],marker='X',color='black',zorder=3,s=50)
 ts.plot(soln,color='black',label=r'$\alpha=$'+str(alpha),zorder=2)
 plt.plot(ts.ts,[soln(t) for t in ts.ts],color='black',alpha=0.2)
-
 #
 # plot again with a different alpha
 #
@@ -105,7 +95,6 @@ alpha=0.35
 initvalue=so.broyden1(minimizethis,initialoutputvalue)
 ts.plot(soln,color='red',label=r'$\alpha=$'+str(alpha),zorder=2)
 plt.plot(ts.ts,[soln(t) for t in ts.ts],color='red',alpha=0.2)
-
 #
 # label the x axis
 #
