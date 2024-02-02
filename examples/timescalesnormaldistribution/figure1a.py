@@ -2,6 +2,7 @@
 # created 2021.08.26 by tom cuchta
 # used in published manuscript
 # Umit Aksoy, Tom Cuchta, Svetlin Georgiev, and Yeliz Okur. A normal distribution on time scales with application. Filomat, 36(16):5391-5404, 2022.
+# https://www.pmf.ni.ac.rs/filomat-content/2022/36-16/36-16-4-17039.pdf
 #
 import timescalecalculus as tsc
 import matplotlib.pyplot as plt
