@@ -1,3 +1,6 @@
+#
+# created 2024.01.30 by tom cuchta
+#
 import timescalecalculus as tsc
 import scipy.optimize as so
 import matplotlib.pyplot as plt
