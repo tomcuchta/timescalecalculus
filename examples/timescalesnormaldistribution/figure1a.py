@@ -6,20 +6,35 @@
 #
 import timescalecalculus as tsc
 import matplotlib.pyplot as plt
-
+#
+# time scale of some integers
+#
 ts=tsc.timescale([-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7])
+#
+# w1:T->R
+# w1(t;m,p)=(t-m)/p^2
+# 
 def w1(t,m,p):
     return (t-m)/(p*p)
-
+#
+# w2:T->R
+# w2(t;m,p)=-w1(t;m,p)
+#
 def w2(t,m,p):
     return -w1(t,m,p)
-
+# 
+# q:T->R
+# defined piecewise, to be used as subscript of a dynamic exponential
+#
 def q(t,m,p):
     if t>=m:
         return ts.mucircleminus(lambda t: w1(t,m,p),t)
     if t<m:
         return ts.mucircleminus(lambda t: w2(t,m,p),t)
-
+#
+# N1:T->R
+# represents an unnormalized form of the time scales normal distribution defined in this paper
+# 
 def N1(t,m,p):
     if t>=m:
         return ts.dexp_p(lambda t: q(t,m,p),ts.sigma(t),m)
